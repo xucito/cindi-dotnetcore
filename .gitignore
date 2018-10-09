@@ -2,4 +2,8 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/Cindi.DotNetCore/.vs/Cindi.DotNetCore/v15/Server/sqlite3
+/Cindi.DotNetCore/.vs/*
+/Cindi.DotNetCore/Cindi.DotNetCore/bin/*
+/Cindi.DotNetCore/Cindi.DotNetCore/obj/*
+/Cindi.DotNetCore/SampleBot/obj/*
+/Cindi.DotNetCore/SampleBot/bin/*
