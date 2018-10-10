@@ -38,7 +38,7 @@ namespace Cindi.DotNetCore.BotExtensions
         /// <typeparam name="TProcessor"></typeparam>
         /// <param name="services"></param>
         /// <param name="configureOptions"></param>
-        public static void AddWorkerBot<TOptions, THandler> (this IServiceCollection services, Action<WorkerBotHandlerOptions> configureOptions)
+        public static void AddWorkerBot<TOptions, THandler> (this IServiceCollection services, Action<TOptions> configureOptions)
             where TOptions: WorkerBotHandlerOptions
             where THandler : WorkerBotHandler<TOptions>
         {
