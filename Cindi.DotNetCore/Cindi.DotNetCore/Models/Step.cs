@@ -38,10 +38,15 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// 
         /// </summary>
         public int Id { get; set; }
+
+        public StepTemplateReference StepTemplateReference { get; set; }
+
+        /*
         /// <summary>
-        /// Maps to a Step Definition
+        /// List of tasks to be run based on the id of the task and the status of that task
         /// </summary>
-        public string TemplateId { get; set; }
+        public Dictionary<string, int> Dependencies { get; set; }
+        */
 
         /// <summary>
         /// Input for the task, the Input name is the dictionary key and the input value is the Dictionary value

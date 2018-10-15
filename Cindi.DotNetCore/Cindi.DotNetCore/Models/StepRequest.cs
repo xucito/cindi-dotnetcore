@@ -12,6 +12,6 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// <summary>
         /// The definitions for which this request can match
         /// </summary>
-        public string[] CompatibleDefinitions { get; set; }
+        public StepTemplateReference[] CompatibleDefinitions { get; set; }
     }
 }

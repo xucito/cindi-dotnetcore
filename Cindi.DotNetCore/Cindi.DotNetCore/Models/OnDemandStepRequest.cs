@@ -11,7 +11,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// Maps to a Step Definition
         /// </summary>
         [Required]
-        public string TemplateId { get; set; }
+        public StepTemplateReference TemplateId { get; set; }
 
         /// <summary>
         /// Input for the task, the Input name is the dictionary key and the input value is the Dictionary value

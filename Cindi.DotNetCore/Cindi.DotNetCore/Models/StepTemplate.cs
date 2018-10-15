@@ -14,14 +14,20 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// Version of the definition
         /// </summary>
         public int Version { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public string TemplateId()
+
+
+        public StepTemplateReference Reference
         {
-            return Name + "_v" + Version;
+            get
+            {
+                return new StepTemplateReference()
+                {
+                    Name = this.Name,
+                    Version = this.Version
+                };
+            }
         }
+
         /// <summary>
         /// Input from dependency with input name is the dictionary key and the type as the Dictionary value
         /// </summary>
@@ -44,7 +50,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// <returns></returns>
         public bool StepMatches(Step step)
         {
-            if(step.TemplateId == TemplateId())
+            if (step.StepTemplateReference.TemplateId == Reference.TemplateId)
             {
                 return true;
             }

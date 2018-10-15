@@ -95,7 +95,7 @@ namespace Cindi.DotNetCore.BotExtensions
                 }
                 else
                 {
-                    Logger.LogWarning("Could not register template " + template.TemplateId() + " as there is no valid httpClient.");
+                    Logger.LogWarning("Could not register template " + template.Reference.TemplateId + " as there is no valid httpClient.");
                 }
             }
             return true;
@@ -103,7 +103,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public void QueueTemplateForRegistration(StepTemplate stepTemplate)
         {
-            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.TemplateId() == stepTemplate.TemplateId()).Count();
+            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.Reference.TemplateId == stepTemplate.Reference.TemplateId).Count();
 
             if (foundTemplateCount == 0)
             {
@@ -196,7 +196,7 @@ namespace Cindi.DotNetCore.BotExtensions
         {
             var newRequest = new StepRequest
             {
-                CompatibleDefinitions = RegisteredTemplates.Select(t => t.TemplateId()).ToArray()
+                CompatibleDefinitions = RegisteredTemplates.Select(t => t.Reference).ToArray()
             };
 
             var result = await _client.PostAsync(_client.BaseAddress + "/Steps/next", new StringContent(JsonConvert.SerializeObject(newRequest), Encoding.UTF8, "application/json"));
@@ -239,11 +239,11 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public bool ValidateStep(Step step)
         {
-            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.TemplateId() == step.TemplateId).Count();
+            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.Reference.TemplateId == step.StepTemplateReference.TemplateId).Count();
 
             if (foundStepTemplatesCount == 0)
             {
-                throw new StepTemplateNotFoundException("No step templates for step template " + step.TemplateId);
+                throw new StepTemplateNotFoundException("No step templates for step template " + step.StepTemplateReference.TemplateId);
             }
             else if (foundStepTemplatesCount == 1)
             {
@@ -251,7 +251,7 @@ namespace Cindi.DotNetCore.BotExtensions
             }
             else
             {
-                throw new StepTemplateDuplicateFoundException("Found duplicate step templates for step template " + step.TemplateId);
+                throw new StepTemplateDuplicateFoundException("Found duplicate step templates for step template " + step.StepTemplateReference.TemplateId);
             }
         }
 
