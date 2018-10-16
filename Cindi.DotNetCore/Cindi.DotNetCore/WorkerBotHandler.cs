@@ -160,8 +160,15 @@ namespace Cindi.DotNetCore.BotExtensions
             while (started)
             {
                 Console.WriteLine("Starting new Thread");
-
-                Step nextStep = await GetNextStep();
+                Step nextStep = null;
+                try
+                {
+                    nextStep = await GetNextStep();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogWarning("Error getting next step, will sleep and try again. " + e.Message);
+                }
 
                 if (nextStep != null)
                 {
@@ -179,6 +186,7 @@ namespace Cindi.DotNetCore.BotExtensions
                 {
                     Console.WriteLine("No step found");
                 }
+
 
                 lock (waitTimeLocker)
                 {
@@ -219,7 +227,7 @@ namespace Cindi.DotNetCore.BotExtensions
         {
             try
             {
-                if(ValidateStep(step))
+                if (ValidateStep(step))
                 {
                     return await HandleStep(step);
                 }
