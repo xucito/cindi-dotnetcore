@@ -101,7 +101,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
 
     public class CommonData
     {
-        public enum InputDataType { Int, String, Bool, Object }
+        public enum InputDataType { Int, String, Bool, Object, ErrorMessage }
 
         public CommonData()
         { }

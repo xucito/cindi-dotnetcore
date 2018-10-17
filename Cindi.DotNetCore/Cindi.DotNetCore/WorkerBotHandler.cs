@@ -175,9 +175,26 @@ namespace Cindi.DotNetCore.BotExtensions
                     Console.WriteLine("Processing step " + nextStep.Id);
                     stopWatch.Start();
 
-                    var processResult = await ProcessStep(nextStep);
+                    try
+                    {
+                        nextStep = await ProcessStep(nextStep);
+                    }
+                    catch (Exception e)
+                    {
+                        //If the handler sets the status to error than this does need to be processed
+                        if (nextStep.Status != Statuses.Error)
+                        {
+                            nextStep.Status = Statuses.Error;
+                            nextStep.Outputs.Add(new CommonData()
+                            {
+                                Type = (int)CommonData.InputDataType.ErrorMessage,
+                                Id = "ErrorMessage",
+                                Value = e.Message
+                            });
+                        }
 
-                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(processResult), Encoding.UTF8, "application/json"));
+                    }
+                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(nextStep), Encoding.UTF8, "application/json"));
 
                     stopWatch.Stop();
                     Console.WriteLine("Completed Service Loop took approximately " + stopWatch.ElapsedMilliseconds / 1000 + "secs");
@@ -240,7 +257,7 @@ namespace Cindi.DotNetCore.BotExtensions
             catch (Exception e)
             {
                 Logger.LogError(e.Message);
-                return null;
+                throw e;
             }
         }
 
