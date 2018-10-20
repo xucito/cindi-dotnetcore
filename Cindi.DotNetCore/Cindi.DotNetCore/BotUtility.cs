@@ -12,11 +12,11 @@ namespace Cindi.DotNetCore.BotExtensions
     {
         public static CommonData GetData(List<CommonData> data, string keyName)
         {
-            var result = data.Where(d => d.Id == keyName).ToList();
+            var result = data.Where(d => d.Id.ToLower() == keyName.ToLower()).ToList();
 
             if(result.Count() == 0)
             {
-                throw new MissingInputException();
+                throw new MissingInputException("Missing " + keyName);
             }
             else if(result.Count() > 1)
             {

@@ -50,7 +50,7 @@ namespace Cindi.DotNetCore.BotExtensions
             {
                 Name = "On-Demand-Step-" + Guid.NewGuid(),
                 Id = 0,
-                TemplateId = request.TemplateId,
+                StepTemplateReference = request.TemplateId,
                 CreatedOn = DateTime.UtcNow,
                 Status = Statuses.Unassigned,
                 Inputs = request.Inputs

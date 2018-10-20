@@ -95,7 +95,7 @@ namespace Cindi.DotNetCore.BotExtensions
                 }
                 else
                 {
-                    Logger.LogWarning("Could not register template " + template.TemplateId() + " as there is no valid httpClient.");
+                    Logger.LogWarning("Could not register template " + template.Reference.TemplateId + " as there is no valid httpClient.");
                 }
             }
             return true;
@@ -103,7 +103,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public void QueueTemplateForRegistration(StepTemplate stepTemplate)
         {
-            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.TemplateId() == stepTemplate.TemplateId()).Count();
+            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.Reference.TemplateId == stepTemplate.Reference.TemplateId).Count();
 
             if (foundTemplateCount == 0)
             {
@@ -160,17 +160,41 @@ namespace Cindi.DotNetCore.BotExtensions
             while (started)
             {
                 Console.WriteLine("Starting new Thread");
-
-                Step nextStep = await GetNextStep();
+                Step nextStep = null;
+                try
+                {
+                    nextStep = await GetNextStep();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogWarning("Error getting next step, will sleep and try again. " + e.Message);
+                }
 
                 if (nextStep != null)
                 {
                     Console.WriteLine("Processing step " + nextStep.Id);
                     stopWatch.Start();
 
-                    var processResult = await ProcessStep(nextStep);
+                    try
+                    {
+                        nextStep = await ProcessStep(nextStep);
+                    }
+                    catch (Exception e)
+                    {
+                        //If the handler sets the status to error than this does need to be processed
+                        if (nextStep.Status != Statuses.Error)
+                        {
+                            nextStep.Status = Statuses.Error;
+                            nextStep.Outputs.Add(new CommonData()
+                            {
+                                Type = (int)CommonData.InputDataType.ErrorMessage,
+                                Id = "ErrorMessage",
+                                Value = e.Message
+                            });
+                        }
 
-                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(processResult), Encoding.UTF8, "application/json"));
+                    }
+                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(nextStep), Encoding.UTF8, "application/json"));
 
                     stopWatch.Stop();
                     Console.WriteLine("Completed Service Loop took approximately " + stopWatch.ElapsedMilliseconds / 1000 + "secs");
@@ -179,6 +203,7 @@ namespace Cindi.DotNetCore.BotExtensions
                 {
                     Console.WriteLine("No step found");
                 }
+
 
                 lock (waitTimeLocker)
                 {
@@ -196,7 +221,7 @@ namespace Cindi.DotNetCore.BotExtensions
         {
             var newRequest = new StepRequest
             {
-                CompatibleDefinitions = RegisteredTemplates.Select(t => t.TemplateId()).ToArray()
+                CompatibleDefinitions = RegisteredTemplates.Select(t => t.Reference).ToArray()
             };
 
             var result = await _client.PostAsync(_client.BaseAddress + "/Steps/next", new StringContent(JsonConvert.SerializeObject(newRequest), Encoding.UTF8, "application/json"));
@@ -219,7 +244,7 @@ namespace Cindi.DotNetCore.BotExtensions
         {
             try
             {
-                if(ValidateStep(step))
+                if (ValidateStep(step))
                 {
                     return await HandleStep(step);
                 }
@@ -232,18 +257,18 @@ namespace Cindi.DotNetCore.BotExtensions
             catch (Exception e)
             {
                 Logger.LogError(e.Message);
-                return null;
+                throw e;
             }
         }
 
 
         public bool ValidateStep(Step step)
         {
-            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.TemplateId() == step.TemplateId).Count();
+            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.Reference.TemplateId == step.StepTemplateReference.TemplateId).Count();
 
             if (foundStepTemplatesCount == 0)
             {
-                throw new StepTemplateNotFoundException("No step templates for step template " + step.TemplateId);
+                throw new StepTemplateNotFoundException("No step templates for step template " + step.StepTemplateReference.TemplateId);
             }
             else if (foundStepTemplatesCount == 1)
             {
@@ -251,7 +276,7 @@ namespace Cindi.DotNetCore.BotExtensions
             }
             else
             {
-                throw new StepTemplateDuplicateFoundException("Found duplicate step templates for step template " + step.TemplateId);
+                throw new StepTemplateDuplicateFoundException("Found duplicate step templates for step template " + step.StepTemplateReference.TemplateId);
             }
         }
 
