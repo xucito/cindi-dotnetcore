@@ -27,11 +27,20 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             using (HttpClient client = new HttpClient())
             {
 
-                var result = await client.PostAsync("/sequences", new StringContent(JsonConvert.SerializeObject(input), Encoding.UTF8, "application/json"));
+                client.BaseAddress = new Uri(_url);
 
-                var test = result.Content;
+                var response = await client.PostAsync("/api/sequences", new StringContent(JsonConvert.SerializeObject(input), Encoding.UTF8, "application/json"));
 
-                return 1;
+                var contents = await response.Content.ReadAsStringAsync();
+                
+                if(response.IsSuccessStatusCode)
+                {
+                    return int.Parse(contents);
+                }
+                else
+                {
+                    throw new Exception("Error sending sequence request, returned with error " + response.StatusCode);
+                }
             }
         }
     }
