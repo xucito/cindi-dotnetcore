@@ -16,5 +16,7 @@ namespace Cindi.DotNetCore.BotExtensions
         /// Step Templates that this bot can process
         /// </summary>
         public List<StepTemplate> StepTemplateLibrary { get; set; }
+
+        public string Id { get; set; }
     }
 }
