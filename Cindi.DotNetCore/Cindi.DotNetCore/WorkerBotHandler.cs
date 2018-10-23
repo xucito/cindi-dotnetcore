@@ -31,6 +31,8 @@ namespace Cindi.DotNetCore.BotExtensions
         protected UrlEncoder UrlEncoder { get; }
         public TOptions Options { get; }
         public int loopNumber = 0;
+        public string Id { get; }
+        public string RunTime { get; }
 
         public WorkerBotHandler(IOptionsMonitor<TOptions> options, ILoggerFactory logger, UrlEncoder encoder)
         {
@@ -54,12 +56,21 @@ namespace Cindi.DotNetCore.BotExtensions
             }
 
             Logger = logger.CreateLogger(this.GetType().FullName);
-
+            
             if (Options.AutoStart)
             {
                 // Initiate the registration of all templates and run loop if valid
                 StartWorking();
             }
+
+            if (options.CurrentValue.Id == null)
+            {
+                Random rnd = new Random();
+                Id = BotUtility.GenerateName(rnd.Next(4, 10)) + '-' + (rnd.Next(1, 100));
+            }
+
+            // Create a new Run Time Id
+            RunTime = Guid.NewGuid().ToString();
         }
 
 
@@ -132,7 +143,7 @@ namespace Cindi.DotNetCore.BotExtensions
             }
             else
             {
-                throw new Exception("Error adding template");
+                throw new Exception("Error adding template for template " + stepTemplate.Reference.TemplateId);
             }
         }
 
