@@ -30,6 +30,7 @@ namespace Cindi.DotNetCore.BotExtensions
         protected ILogger Logger { get; }
         protected UrlEncoder UrlEncoder { get; }
         public TOptions Options { get; }
+        public int loopNumber = 0;
 
         public WorkerBotHandler(IOptionsMonitor<TOptions> options, ILoggerFactory logger, UrlEncoder encoder)
         {
@@ -54,8 +55,11 @@ namespace Cindi.DotNetCore.BotExtensions
 
             Logger = logger.CreateLogger(this.GetType().FullName);
 
-            // Initiate the registration of all templates and run loop if valid
-            StartWorking();
+            if (Options.AutoStart)
+            {
+                // Initiate the registration of all templates and run loop if valid
+                StartWorking();
+            }
         }
 
 
@@ -169,11 +173,11 @@ namespace Cindi.DotNetCore.BotExtensions
                 {
                     Logger.LogWarning("Error getting next step, will sleep and try again. " + e.Message);
                 }
-
+                stopWatch.Reset();
+                stopWatch.Start();
                 if (nextStep != null)
                 {
                     Console.WriteLine("Processing step " + nextStep.Id);
-                    stopWatch.Start();
 
                     try
                     {
@@ -194,16 +198,18 @@ namespace Cindi.DotNetCore.BotExtensions
                         }
 
                     }
+                    
                     await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(nextStep), Encoding.UTF8, "application/json"));
 
-                    stopWatch.Stop();
-                    Console.WriteLine("Completed Service Loop took approximately " + stopWatch.ElapsedMilliseconds / 1000 + "secs");
                 }
                 else
                 {
                     Console.WriteLine("No step found");
                 }
 
+                loopNumber++;
+                stopWatch.Stop();
+                Console.WriteLine("Completed Service Loop " + loopNumber + " took approximately " + stopWatch.ElapsedMilliseconds + "ms");
 
                 lock (waitTimeLocker)
                 {
