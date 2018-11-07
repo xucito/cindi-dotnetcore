@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using Cindi.DotNetCore.BotExtensions.Models;
 using Cindi.DotNetCore.BotExtensions.Exceptions;
 
 namespace Cindi.DotNetCore.BotExtensions.Models
@@ -12,7 +13,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         public SequenceTemplate()
         {
             this.LogicBlocks = new List<LogicBlock>();
-            this.StartingMapping = new List<Mapping>();
+            // this.StartingMapping = new List<Mapping>();
         }
         /// <summary>
         /// Name of definition
@@ -22,14 +23,23 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// Version of the definition
         /// </summary>
         public int Version { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public string SequenceTemplateId { get { return Name + "_v" + Version; } }
+
+        public TemplateReference Reference
+        {
+            get
+            {
+                return new TemplateReference()
+                {
+                    Name = this.Name,
+                    Version = this.Version
+                };
+            }
+        }
+
+
         public List<LogicBlock> LogicBlocks { get; set; }
-        public string StartingStepTemplateId { get; set; }
-        public List<Mapping> StartingMapping { get; set; }
+        //  public TemplateReference StartingStepTemplateReference { get; set; }
+        //   public List<Mapping> StartingMapping { get; set; }
         /// <summary>
         /// Input from dependency with input name is the dictionary key and the type as the Dictionary value
         /// </summary>
@@ -77,10 +87,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// </summary>
         public int StepRefId { get; set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public string TemplateId { get; set; } 
+        // public TemplateReference StepTemplateReference { get; set; }
 
         private string _status { get; set; }
 
@@ -109,23 +116,19 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         public SubsequentStep()
         {
             Mappings = new List<Mapping>();
+            IsPriority = false;
         }
-
-        public string TemplateId { get; set; }
-        public int StepRefId { get; set; }
+        public TemplateReference StepTemplateReference { get; set; }
         public List<Mapping> Mappings { get; set; }
+        public bool IsPriority { get; set; }
+        public int StepRefId { get; set; }
     }
 
     public class Mapping
     {
-        /// <summary>
-        /// The reference Id of the Step for this mapping
-        /// </summary>
-        public int StepRefId { get; set; }
-        /// <summary>
-        /// Output definition value used to map
-        /// </summary>
-        public string PrerequisiteOutputId { get; set; }
+        public StepOutputReference[] OutputReferences { get; set; }
+
+        public string Value { get; set; }
         /// <summary>
         /// The field that the Step is mapped to
         /// </summary>
