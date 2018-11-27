@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 namespace Cindi.DotNetCore.BotExtensions.Models
 {
+
+
     public class Step
     {
         public Step()
@@ -21,6 +23,8 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         [Required]
         public string Name { get; set; }
 
+        public string Description { get; set; }
+
         /// <summary>
         /// The sequence this step belongs to 
         /// </summary>
@@ -28,7 +32,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// <summary>
         /// The template that the sequence is defined by
         /// </summary>
-        public string SequenceTemplateId { get; set; }
+        //public string SequenceTemplateId { get; set; }
         /// <summary>
         /// Used to map to a specific step in a sequence
         /// </summary>
@@ -39,7 +43,8 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// </summary>
         public int Id { get; set; }
 
-        public StepTemplateReference StepTemplateReference { get; set; }
+        [Required]
+        public TemplateReference StepTemplateReference { get; set; }
 
         /*
         /// <summary>
@@ -72,7 +77,9 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// </summary>
         public int StatusCode { get; set; }
 
+        public string Log { get; set; }
     }
+
 
     /// <summary>
     /// The status of the task
@@ -99,45 +106,4 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         }
     };
 
-    public class CommonData
-    {
-        public enum InputDataType { Int, String, Bool, Object, ErrorMessage }
-
-        public CommonData()
-        { }
-
-
-        public CommonData(string id, int type, string value)
-        {
-            this.Id = id;
-            this.Type = type;
-
-            try
-            {
-                switch (type)
-                {
-                    case (int)InputDataType.Bool:
-                        var result = Convert.ToBoolean(value);
-                        break;
-                    case (int)InputDataType.String:
-                        break;
-                    case (int)InputDataType.Int:
-                        var intConversion = int.Parse(value);
-                        break;
-                    case (int)InputDataType.Object:
-                        var jsonConversion = JsonConvert.DeserializeObject(value);
-                        break;
-                }
-                Value = value;
-            }
-            catch (Exception e)
-            {
-                throw new InvalidInputValueException(e.Message);
-            }
-        }
-
-        public string Id { get; set; }
-        public int Type { get; set; }
-        public string Value { get; set; }
-    }
 }

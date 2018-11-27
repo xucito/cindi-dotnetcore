@@ -56,12 +56,7 @@ namespace Cindi.DotNetCore.BotExtensions
             }
 
             Logger = logger.CreateLogger(this.GetType().FullName);
-            
-            if (Options.AutoStart)
-            {
-                // Initiate the registration of all templates and run loop if valid
-                StartWorking();
-            }
+           
 
             if (options.CurrentValue.Id == null)
             {
@@ -71,6 +66,12 @@ namespace Cindi.DotNetCore.BotExtensions
 
             // Create a new Run Time Id
             RunTime = Guid.NewGuid().ToString();
+
+            if (Options.AutoStart)
+            {
+                // Initiate the registration of all templates and run loop if valid
+                StartWorking();
+            }
         }
 
 
@@ -136,9 +137,10 @@ namespace Cindi.DotNetCore.BotExtensions
 
         private async Task<bool> RegisterTemplateAsync(StepTemplate stepTemplate)
         {
-            var result = await _client.PostAsync(_client.BaseAddress + "/StepTemplates", new StringContent(JsonConvert.SerializeObject(stepTemplate), Encoding.UTF8, "application/json"));
+            var result = await _client.PostAsync(_client.BaseAddress + "/StepTemplates", new StringContent(JsonConvert.SerializeObject(new NewStepTemplateRequest( stepTemplate)), Encoding.UTF8, "application/json"));
             if (result.IsSuccessStatusCode)
             {
+                Logger.LogInformation("Successfully registered template " + stepTemplate.Reference.TemplateId);
                 return true;
             }
             else
@@ -186,21 +188,24 @@ namespace Cindi.DotNetCore.BotExtensions
                 }
                 stopWatch.Reset();
                 stopWatch.Start();
+
+                UpdateStepRequest stepResult = new UpdateStepRequest();
+
                 if (nextStep != null)
                 {
                     Console.WriteLine("Processing step " + nextStep.Id);
 
                     try
                     {
-                        nextStep = await ProcessStep(nextStep);
+                        stepResult = await ProcessStep(nextStep);
                     }
                     catch (Exception e)
                     {
                         //If the handler sets the status to error than this does need to be processed
-                        if (nextStep.Status != Statuses.Error)
+                        if (stepResult.Status != Statuses.Error)
                         {
-                            nextStep.Status = Statuses.Error;
-                            nextStep.Outputs.Add(new CommonData()
+                            stepResult.Status = Statuses.Error;
+                            stepResult.Outputs.Add(new CommonData()
                             {
                                 Type = (int)CommonData.InputDataType.ErrorMessage,
                                 Id = "ErrorMessage",
@@ -210,7 +215,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
                     }
                     
-                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(nextStep), Encoding.UTF8, "application/json"));
+                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(stepResult), Encoding.UTF8, "application/json"));
 
                 }
                 else
@@ -257,7 +262,7 @@ namespace Cindi.DotNetCore.BotExtensions
             return step;
         }
 
-        public async Task<Step> ProcessStep(Step step)
+        public async Task<UpdateStepRequest> ProcessStep(Step step)
         {
             try
             {
@@ -302,6 +307,6 @@ namespace Cindi.DotNetCore.BotExtensions
         /// </summary>
         /// <param name="step"></param>
         /// <returns></returns>
-        public abstract Task<Step> HandleStep(Step step);
+        public abstract Task<UpdateStepRequest> HandleStep(Step step);
     }
 }

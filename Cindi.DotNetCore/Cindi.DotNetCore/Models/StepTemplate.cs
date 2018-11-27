@@ -15,12 +15,17 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// </summary>
         public int Version { get; set; }
 
+        /// <summary>
+        /// Dynamic inputs will default type string
+        /// </summary>
+        public bool AllowDynamicInputs = false;
 
-        public StepTemplateReference Reference
+
+        public TemplateReference Reference
         {
             get
             {
-                return new StepTemplateReference()
+                return new TemplateReference()
                 {
                     Name = this.Name,
                     Version = this.Version
@@ -31,7 +36,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// <summary>
         /// Input from dependency with input name is the dictionary key and the type as the Dictionary value
         /// </summary>
-        public Dictionary<string, string> InputDefinitions { get; set; }
+        public Dictionary<string, DataDescription> InputDefinitions { get; set; }
 
         /// <summary>
         ///  Output from task, the output name is the dictionary key and the type is Dictionary value
@@ -41,7 +46,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         ///    value: number
         ///  }
         /// </summary>
-        public Dictionary<string, string> OutputDefinitions { get; set; }
+        public Dictionary<string, DataDescription> OutputDefinitions { get; set; }
 
         /// <summary>
         /// Checks whether the step matches the step definition
