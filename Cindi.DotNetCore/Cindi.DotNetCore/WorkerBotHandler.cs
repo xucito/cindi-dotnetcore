@@ -56,7 +56,7 @@ namespace Cindi.DotNetCore.BotExtensions
             }
 
             Logger = logger.CreateLogger(this.GetType().FullName);
-           
+
 
             if (options.CurrentValue.Id == null)
             {
@@ -137,7 +137,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         private async Task<bool> RegisterTemplateAsync(StepTemplate stepTemplate)
         {
-            var result = await _client.PostAsync(_client.BaseAddress + "/StepTemplates", new StringContent(JsonConvert.SerializeObject(new NewStepTemplateRequest( stepTemplate)), Encoding.UTF8, "application/json"));
+            var result = await _client.PostAsync(_client.BaseAddress + "/StepTemplates", new StringContent(JsonConvert.SerializeObject(new NewStepTemplateRequest(stepTemplate)), Encoding.UTF8, "application/json"));
             if (result.IsSuccessStatusCode)
             {
                 Logger.LogInformation("Successfully registered template " + stepTemplate.Reference.TemplateId);
@@ -194,6 +194,7 @@ namespace Cindi.DotNetCore.BotExtensions
                 if (nextStep != null)
                 {
                     Console.WriteLine("Processing step " + nextStep.Id);
+                    stepResult.Id = nextStep.Id;
 
                     try
                     {
@@ -202,19 +203,17 @@ namespace Cindi.DotNetCore.BotExtensions
                     catch (Exception e)
                     {
                         //If the handler sets the status to error than this does need to be processed
-                        if (stepResult.Status != Statuses.Error)
+
+                        stepResult.Status = Statuses.Error;
+                        stepResult.Log = "Encountered uncaught error at " + e.Message + ".";/*.Outputs.Add(new CommonData()
                         {
-                            stepResult.Status = Statuses.Error;
-                            stepResult.Outputs.Add(new CommonData()
-                            {
-                                Type = (int)CommonData.InputDataType.ErrorMessage,
-                                Id = "ErrorMessage",
-                                Value = e.Message
-                            });
-                        }
+                            Type = (int)CommonData.InputDataType.ErrorMessage,
+                            Id = "ErrorMessage",
+                            Value = e.Message
+                        });*/
 
                     }
-                    
+
                     await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(stepResult), Encoding.UTF8, "application/json"));
 
                 }
