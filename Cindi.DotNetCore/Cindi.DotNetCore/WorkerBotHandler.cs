@@ -176,7 +176,7 @@ namespace Cindi.DotNetCore.BotExtensions
             var stopWatch = new Stopwatch();
             while (started)
             {
-                Console.WriteLine("Starting new Thread");
+                Logger.LogInformation("Starting new Thread");
                 Step nextStep = null;
                 try
                 {
@@ -193,7 +193,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
                 if (nextStep != null)
                 {
-                    Console.WriteLine("Processing step " + nextStep.Id);
+                    Logger.LogInformation("Processing step " + nextStep.Id);
                     stepResult.Id = nextStep.Id;
 
                     try
@@ -219,16 +219,16 @@ namespace Cindi.DotNetCore.BotExtensions
                 }
                 else
                 {
-                    Console.WriteLine("No step found");
+                    Logger.LogInformation("No step found");
                 }
 
                 loopNumber++;
                 stopWatch.Stop();
-                Console.WriteLine("Completed Service Loop " + loopNumber + " took approximately " + stopWatch.ElapsedMilliseconds + "ms");
+                Logger.LogInformation("Completed Service Loop " + loopNumber + " took approximately " + stopWatch.ElapsedMilliseconds + "ms");
 
                 lock (waitTimeLocker)
                 {
-                    Console.WriteLine("Sleeping for " + waitTime + "ms");
+                    Logger.LogInformation("Sleeping for " + waitTime + "ms");
                     Thread.Sleep(waitTime);
                 }
             }
