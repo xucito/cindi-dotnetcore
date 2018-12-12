@@ -78,6 +78,11 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         public int StatusCode { get; set; }
 
         public string Log { get; set; }
+
+        public bool MatchesTemplate(StepTemplate template)
+        {
+            return StepTemplateReference.TemplateId == template.Reference.TemplateId;
+        }
     }
 
 

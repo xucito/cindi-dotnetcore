@@ -40,6 +40,10 @@ namespace Cindi.DotNetCore.BotExtensions
             return JsonConvert.DeserializeObject<T>(serialized);
         }
 
+        public static bool DoesStepMatchesTemplate(Step step, StepTemplate stepTemplate)
+        {
+            return step.StepTemplateReference.TemplateId == stepTemplate.Reference.TemplateId;
+        }
 
         public static string GenerateName(int len)
         {

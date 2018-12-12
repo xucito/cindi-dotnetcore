@@ -27,7 +27,7 @@ namespace Cindi.DotNetCore.BotExtensions
         private int waitTime = 1000;
         private object waitTimeLocker = new Object();
         private bool _hasValidHttpClient = false;
-        protected ILogger Logger { get; }
+        public ILogger Logger;
         protected UrlEncoder UrlEncoder { get; }
         public TOptions Options { get; }
         public int loopNumber = 0;
