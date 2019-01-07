@@ -8,7 +8,18 @@ namespace Cindi.DotNetCore.BotExtensions.Models
 {
     public class CommonData
     {
-        public enum InputDataType { Int, String, Bool, Object, ErrorMessage }
+        /// <summary>
+        /// Int is defined as a integer in c#
+        /// Decimal is defined as a decimal type in c#
+        /// </summary>
+        public enum InputDataType {
+            Int,
+            String,
+            Bool,
+            Object,
+            ErrorMessage,
+            Decimal
+        }
 
         public CommonData()
         { }

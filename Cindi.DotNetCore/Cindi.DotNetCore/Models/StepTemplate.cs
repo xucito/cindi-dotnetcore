@@ -14,6 +14,8 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// Version of the definition
         /// </summary>
         public int Version { get; set; }
+        
+        public string Description { get; set; }
 
         /// <summary>
         /// Dynamic inputs will default type string
