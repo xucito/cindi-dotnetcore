@@ -214,8 +214,21 @@ namespace Cindi.DotNetCore.BotExtensions
 
                     }
 
-                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(stepResult), Encoding.UTF8, "application/json"));
-
+                    int count = 0;
+                    bool success = false;
+                    while (!success)
+                    {
+                        try
+                        {
+                            await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(stepResult), Encoding.UTF8, "application/json"));
+                            success = true; 
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogWarning("Failed to save step in Cindi with exception " + e.Message + ". Sleeping for 1 seconds and than retrying...");
+                            Thread.Sleep(1000);
+                        }
+                    }
                 }
                 else
                 {
