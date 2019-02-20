@@ -5,6 +5,14 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
+    <Description>.NET Core extension for Cindi</Description>
+    <Authors>xucito</Authors>
+    <Company>Cindi</Company>
+    <PackageLicenseUrl>https://github.com/xucito/cindi-dotnetcore/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/xucito/cindi-dotnetcore</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>Development Build of .NET Core Extensions</PackageReleaseNotes>
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
