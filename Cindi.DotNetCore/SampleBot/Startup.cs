@@ -29,9 +29,10 @@ namespace SampleBot
         {
             services.AddWorkerBot<SampleWorkerBot>(o =>
             {
-                o.NodeURL = null;
-                o.SleepTime = 100;
+                o.NodeURL = "http://localhost:5000";
+                o.SleepTime = 10000;
                 o.StepTemplateLibrary = Library.StepTemplateLibrary;
+                o.AutoStart = true;
             });
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 

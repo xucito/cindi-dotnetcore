@@ -1,5 +1,8 @@
-﻿using Cindi.DotNetCore.BotExtensions;
-using Cindi.DotNetCore.BotExtensions.Models;
+﻿using Cindi.Domain.Entities.Steps;
+using Cindi.Domain.Utilities;
+using Cindi.Domain.ValueObjects;
+using Cindi.DotNetCore.BotExtensions;
+using Cindi.DotNetCore.BotExtensions.Requests;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -7,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using static Cindi.DotNetCore.BotExtensions.Models.CommonData;
 
 namespace SampleBot.Services
 {
@@ -17,22 +19,25 @@ namespace SampleBot.Services
         {
         }
 
-        public override Task<Step> HandleStep(Step step)
+        public override Task<UpdateStepRequest> HandleStep(Step step)
         {
-            switch(step.TemplateId)
+            var updateRequest = new UpdateStepRequest()
             {
-                case "Calculate_Fibonacci_v0":
-                    var result = CalculateFibonacci(int.Parse(BotUtility.GetData(step.Inputs, "n-1").Value), int.Parse(BotUtility.GetData(step.Inputs, "n-2").Value));
-                    step.Outputs.Add(new CommonData("n", (int)InputDataType.Int, ""+result));
-                    step.Status = Statuses.Successful;
-                    step.Completed = DateTime.UtcNow;
-                    return Task.FromResult(step);
+                Id = step.Id
+            };
+            switch(step.StepTemplateId)
+            {
+                case "Fibonacci_stepTemplate:0":
+                    var result = CalculateFibonacci((Int64)DynamicDataUtility.GetData(step.Inputs, "n-1").Value, (Int64)(DynamicDataUtility.GetData(step.Inputs, "n-2").Value));
+                    updateRequest.Outputs = new Dictionary<string, object>() { { "n", result } };
+                    updateRequest.Status = StepStatuses.Successful;
+                    return Task.FromResult(updateRequest);
             }
 
             throw new NotImplementedException();
         }
 
-        private int CalculateFibonacci(int firstValue, int secondValue)
+        private Int64 CalculateFibonacci(Int64 firstValue, Int64 secondValue)
         {
             return firstValue + secondValue;
         }

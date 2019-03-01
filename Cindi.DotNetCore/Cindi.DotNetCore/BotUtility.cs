@@ -1,5 +1,6 @@
-﻿using Cindi.DotNetCore.BotExtensions.Exceptions;
-using Cindi.DotNetCore.BotExtensions.Models;
+﻿using Cindi.Domain.Entities.Steps;
+using Cindi.Domain.Entities.StepTemplates;
+using Cindi.DotNetCore.BotExtensions.Exceptions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,24 +11,6 @@ namespace Cindi.DotNetCore.BotExtensions
 {
     public static class BotUtility
     {
-        public static CommonData GetData(List<CommonData> data, string keyName)
-        {
-            var result = data.Where(d => d.Id.ToLower() == keyName.ToLower()).ToList();
-
-            if(result.Count() == 0)
-            {
-                throw new MissingInputException("Missing " + keyName);
-            }
-            else if(result.Count() > 1)
-            {
-                throw new DuplicateInputException();
-            }
-            else
-            {
-                return result.First();
-            }
-        }
-
         /// <summary>
         /// Used for cloning
         /// </summary>
@@ -42,7 +25,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public static bool DoesStepMatchesTemplate(Step step, StepTemplate stepTemplate)
         {
-            return step.StepTemplateReference.TemplateId == stepTemplate.Reference.TemplateId;
+            return step.StepTemplateId == stepTemplate.Id;
         }
 
         public static string GenerateName(int len)

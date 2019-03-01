@@ -1,4 +1,7 @@
-﻿using Cindi.DotNetCore.BotExtensions.Models;
+﻿using Cindi.Domain.Entities.JournalEntries;
+using Cindi.Domain.Entities.Steps;
+using Cindi.Domain.ValueObjects;
+using Cindi.DotNetCore.BotExtensions.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -46,13 +49,29 @@ namespace Cindi.DotNetCore.BotExtensions
                 return BadRequest(ModelState);
             }
 
+            var newStepId = Guid.NewGuid();
             return Ok(await Handler.ProcessStep(new Step()
             {
-                Name = "On-Demand-Step-" + Guid.NewGuid(),
-                Id = 0,
-                StepTemplateReference = request.TemplateId,
+                Id = newStepId,
+                StepTemplateId = request.StepTemplateId,
                 CreatedOn = DateTime.UtcNow,
-                Status = Statuses.Unassigned,
+                Journal = new Domain.Entities.JournalEntries.Journal(new List<JournalEntry>() {
+                    new JournalEntry()
+                    {
+                        SubjectId = newStepId,
+                        ChainId = 0,
+                        Entity = JournalEntityTypes.Step,
+                        RecordedOn = DateTime.UtcNow,
+                        Updates = new List<Update>()
+                        {
+                            new Update()
+                            {
+                                FieldName = "status",
+                                Value = StepStatuses.Unassigned,
+                                Type = UpdateType.Override
+                            }
+                        }
+                    } }),
                 Inputs = request.Inputs
             }));
         }
