@@ -91,11 +91,21 @@ namespace Cindi.DotNetCore.BotExtensions.Models
     /// </summary>
     public class Statuses
     {
-        public static string Unassigned { get { return "unassigned"; } }
-        public static string Assigned { get { return "assigned"; } }
-        public static string Successful { get { return "successful"; } }
-        public static string Warning { get { return "warning"; } }
-        public static string Error { get { return "error"; } }
+        public const string Suspend = "suspend";
+        public const string Unassigned = "unassigned";
+        public const string Assigned = "assigned";
+        public const string Successful = "successful";
+        public const string Warning = "warning";
+        public const string Error = "error";
+
+        public static string[] AllStatuses = new string[]{
+            Suspend,
+            Unassigned,
+            Assigned,
+            Successful,
+            Warning,
+            Error
+        };
 
         public static bool IsValid(string value)
         {
@@ -103,7 +113,8 @@ namespace Cindi.DotNetCore.BotExtensions.Models
                 value == Assigned ||
                 value == Successful ||
                 value == Warning ||
-                value == Error)
+                value == Error ||
+                value == Suspend)
             {
                 return true;
             }

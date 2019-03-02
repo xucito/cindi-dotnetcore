@@ -18,7 +18,8 @@ namespace Cindi.DotNetCore.BotExtensions.Models
             Bool,
             Object,
             ErrorMessage,
-            Decimal
+            Decimal,
+            DateTime
         }
 
         public CommonData()

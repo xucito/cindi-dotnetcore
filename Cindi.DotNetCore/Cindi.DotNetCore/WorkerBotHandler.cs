@@ -19,7 +19,7 @@ namespace Cindi.DotNetCore.BotExtensions
 {
     public abstract class WorkerBotHandler<TOptions> where TOptions : WorkerBotHandlerOptions
     {
-        private readonly string nodeUrl;
+        public string nodeUrl { get; }
         private HttpClient _client;
         Thread serviceThread;
         private bool started = false;
@@ -33,6 +33,46 @@ namespace Cindi.DotNetCore.BotExtensions
         public int loopNumber = 0;
         public string Id { get; }
         public string RunTime { get; }
+
+        public WorkerBotHandler(TOptions options, ILoggerFactory logger, UrlEncoder encoder)
+        {
+            if (options.NodeURL != null && options.NodeURL != "")
+            {
+                this.nodeUrl = options.NodeURL;
+                _client = new HttpClient();
+                _client.BaseAddress = new Uri(this.nodeUrl + "/api");
+                _hasValidHttpClient = true;
+            }
+
+            Options = options;
+
+            waitTime = options.SleepTime;
+
+            // Register the step template
+            foreach (var template in options.StepTemplateLibrary)
+            {
+                // Queue all the templates for registration
+                QueueTemplateForRegistration(template);
+            }
+
+            if (logger != null)
+            {
+                Logger = logger.CreateLogger(this.GetType().FullName);
+            }
+
+            if (options.Id == null)
+            {
+                Random rnd = new Random();
+                Id = BotUtility.GenerateName(rnd.Next(4, 10)) + '-' + (rnd.Next(1, 100));
+            }
+
+            // Create a new Run Time Id
+            RunTime = Guid.NewGuid().ToString();
+
+
+            // Initiate the registration of all templates and run loop if valid
+            StartWorking();
+        }
 
         public WorkerBotHandler(IOptionsMonitor<TOptions> options, ILoggerFactory logger, UrlEncoder encoder)
         {
@@ -55,8 +95,10 @@ namespace Cindi.DotNetCore.BotExtensions
                 QueueTemplateForRegistration(template);
             }
 
-            Logger = logger.CreateLogger(this.GetType().FullName);
-
+            if (logger != null)
+            {
+                Logger = logger.CreateLogger(this.GetType().FullName);
+            }
 
             if (options.CurrentValue.Id == null)
             {
@@ -67,11 +109,8 @@ namespace Cindi.DotNetCore.BotExtensions
             // Create a new Run Time Id
             RunTime = Guid.NewGuid().ToString();
 
-            if (Options.AutoStart)
-            {
-                // Initiate the registration of all templates and run loop if valid
-                StartWorking();
-            }
+            // Initiate the registration of all templates and run loop if valid
+            StartWorking();
         }
 
 
@@ -82,11 +121,16 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public async void StartWorking()
         {
-            await RegisterAllTemplatesAsync();
-
-            if (_hasValidHttpClient)
+            if (Options.AutoRegister)
             {
-                Run();
+                await RegisterAllTemplatesAsync();
+            }
+            if (Options.AutoStart)
+            {
+                if (_hasValidHttpClient)
+                {
+                    Run();
+                }
             }
         }
 

@@ -7,6 +7,7 @@ using Cindi.DotNetCore.BotExtensions.Exceptions;
 
 namespace Cindi.DotNetCore.BotExtensions.Models
 {
+
     public class SequenceTemplate
     {
 
@@ -25,7 +26,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         public int Version { get; set; }
 
         public string Description { get; set; }
-        
+
         public TemplateReference Reference
         {
             get
@@ -45,7 +46,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// <summary>
         /// Input from dependency with input name is the dictionary key and the type as the Dictionary value
         /// </summary>
-        public Dictionary<string, string> InputDefinitions { get; set; }
+        public Dictionary<string, DataDescription> InputDefinitions { get; set; }
     }
 
     public class LogicBlock
@@ -88,8 +89,10 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         /// Unique Id of the Step defined within the sequence
         /// </summary>
         public int StepRefId { get; set; }
-        
+
         public string Description { get; set; }
+
+        // public TemplateReference StepTemplateReference { get; set; }
 
         private string _status { get; set; }
 
@@ -122,7 +125,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         }
 
         public string Description { get; set; }
-        
+
         public TemplateReference StepTemplateReference { get; set; }
         public List<Mapping> Mappings { get; set; }
         public bool IsPriority { get; set; }
@@ -132,12 +135,10 @@ namespace Cindi.DotNetCore.BotExtensions.Models
     public class Mapping
     {
         public StepOutputReference[] OutputReferences { get; set; }
-        
+
         public string Description { get; set; }
 
         public DefaultValue DefaultValue { get; set; }
-
-        public string Value { get; set; }
         /// <summary>
         /// The field that the Step is mapped to
         /// </summary>
@@ -149,6 +150,7 @@ namespace Cindi.DotNetCore.BotExtensions.Models
         public CommonData Value { get; set; }
         public int Priority = 99999999;
     }
+
 
     public class SequenceStatuses
     {
