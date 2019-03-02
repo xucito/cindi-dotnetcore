@@ -1,4 +1,4 @@
-﻿using Cindi.DotNetCore.BotExtensions.Models;
+﻿using Cindi.Domain.Entities.StepTemplates;
 using System;
 using System.Collections.Generic;
 using System.Text;

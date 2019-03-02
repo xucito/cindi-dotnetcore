@@ -1,7 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Version>0.1.0</Version>
+    <Authors>Xucito</Authors>
+    <Company />
+    <Product>Cindi</Product>
+    <Description>.NET Core extension for Cindi</Description>
+    <PackageLicenseUrl>https://github.com/xucito/cindi-dotnetcore/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/xucito/cindi-dotnetcore</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/xucito/cindi-dotnetcore</RepositoryUrl>
+    <PackageReleaseNotes>Development Build of .NET Core Extensions</PackageReleaseNotes>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>

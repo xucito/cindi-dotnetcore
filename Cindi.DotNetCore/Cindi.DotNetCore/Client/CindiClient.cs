@@ -1,4 +1,4 @@
-﻿using Cindi.DotNetCore.BotExtensions.Models;
+﻿using Cindi.DotNetCore.BotExtensions.ViewModels;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

@@ -1,5 +1,4 @@
-﻿using Cindi.DotNetCore.BotExtensions.Models;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
@@ -14,6 +13,10 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Cindi.DotNetCore.BotExtensions.Exceptions;
+using Cindi.DotNetCore.BotExtensions.Requests;
+using Cindi.Domain.Entities.Steps;
+using Cindi.Domain.Entities.StepTemplates;
+using Newtonsoft.Json.Linq;
 
 namespace Cindi.DotNetCore.BotExtensions
 {
@@ -155,7 +158,7 @@ namespace Cindi.DotNetCore.BotExtensions
                 }
                 else
                 {
-                    Logger.LogWarning("Could not register template " + template.Reference.TemplateId + " as there is no valid httpClient.");
+                    Logger.LogWarning("Could not register template " + template.Id + " as there is no valid httpClient.");
                 }
             }
             return true;
@@ -163,7 +166,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public void QueueTemplateForRegistration(StepTemplate stepTemplate)
         {
-            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.Reference.TemplateId == stepTemplate.Reference.TemplateId).Count();
+            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.Id == stepTemplate.Id).Count();
 
             if (foundTemplateCount == 0)
             {
@@ -181,15 +184,23 @@ namespace Cindi.DotNetCore.BotExtensions
 
         private async Task<bool> RegisterTemplateAsync(StepTemplate stepTemplate)
         {
-            var result = await _client.PostAsync(_client.BaseAddress + "/StepTemplates", new StringContent(JsonConvert.SerializeObject(new NewStepTemplateRequest(stepTemplate)), Encoding.UTF8, "application/json"));
+            var result = await _client.PostAsync(_client.BaseAddress + "/step-templates", new StringContent(JsonConvert.SerializeObject(new NewStepTemplateRequest()
+            {
+                Name = stepTemplate.Name,
+                Version = stepTemplate.Version,
+                AllowDynamicInputs = stepTemplate.AllowDynamicInputs,
+                InputDefinitions = stepTemplate.InputDefinitions,
+                OutputDefinitions = stepTemplate.OutputDefinitions
+            }), Encoding.UTF8, "application/json"));
+
             if (result.IsSuccessStatusCode)
             {
-                Logger.LogInformation("Successfully registered template " + stepTemplate.Reference.TemplateId);
+                Logger.LogInformation("Successfully registered template " + stepTemplate.Id);
                 return true;
             }
             else
             {
-                throw new Exception("Error adding template for template " + stepTemplate.Reference.TemplateId);
+                throw new Exception("Error adding template for template " + stepTemplate.Id);
             }
         }
 
@@ -248,8 +259,8 @@ namespace Cindi.DotNetCore.BotExtensions
                     {
                         //If the handler sets the status to error than this does need to be processed
 
-                        stepResult.Status = Statuses.Error;
-                        stepResult.Log = "Encountered uncaught error at " + e.Message + ".";/*.Outputs.Add(new CommonData()
+                        stepResult.Status = StepStatuses.Error;
+                        stepResult.Logs = "Encountered uncaught error at " + e.Message + ".";/*.Outputs.Add(new CommonData()
                         {
                             Type = (int)CommonData.InputDataType.ErrorMessage,
                             Id = "ErrorMessage",
@@ -258,8 +269,21 @@ namespace Cindi.DotNetCore.BotExtensions
 
                     }
 
-                    await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(stepResult), Encoding.UTF8, "application/json"));
-
+                    int count = 0;
+                    bool success = false;
+                    while (!success)
+                    {
+                        try
+                        {
+                            await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(stepResult), Encoding.UTF8, "application/json"));
+                            success = true; 
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.LogWarning("Failed to save step in Cindi with exception " + e.Message + ". Sleeping for 1 seconds and than retrying...");
+                            Thread.Sleep(1000);
+                        }
+                    }
                 }
                 else
                 {
@@ -286,10 +310,10 @@ namespace Cindi.DotNetCore.BotExtensions
         {
             var newRequest = new StepRequest
             {
-                CompatibleDefinitions = RegisteredTemplates.Select(t => t.Reference).ToArray()
+                StepTemplateIds = RegisteredTemplates.Select(t => t.Id).ToArray()
             };
 
-            var result = await _client.PostAsync(_client.BaseAddress + "/Steps/next", new StringContent(JsonConvert.SerializeObject(newRequest), Encoding.UTF8, "application/json"));
+            var result = await _client.PostAsync(_client.BaseAddress + "/Steps/assignment-requests", new StringContent(JsonConvert.SerializeObject(newRequest), Encoding.UTF8, "application/json"));
 
             //Get content
             var content = await result.Content.ReadAsStringAsync();
@@ -298,9 +322,9 @@ namespace Cindi.DotNetCore.BotExtensions
             {
                 return null;
             }
-
+           
             //Read the content as a string
-            Step step = JsonConvert.DeserializeObject<Step>(content);
+            Step step = JObject.Parse(content)["result"].ToObject<Step>();
 
             return step;
         }
@@ -329,11 +353,11 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public bool ValidateStep(Step step)
         {
-            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.Reference.TemplateId == step.StepTemplateReference.TemplateId).Count();
+            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.Id == step.StepTemplateId).Count();
 
             if (foundStepTemplatesCount == 0)
             {
-                throw new StepTemplateNotFoundException("No step templates for step template " + step.StepTemplateReference.TemplateId);
+                throw new StepTemplateNotFoundException("No step templates for step template " + step.StepTemplateId);
             }
             else if (foundStepTemplatesCount == 1)
             {
@@ -341,7 +365,7 @@ namespace Cindi.DotNetCore.BotExtensions
             }
             else
             {
-                throw new StepTemplateDuplicateFoundException("Found duplicate step templates for step template " + step.StepTemplateReference.TemplateId);
+                throw new StepTemplateDuplicateFoundException("Found duplicate step templates for step template " + step.StepTemplateId);
             }
         }
 

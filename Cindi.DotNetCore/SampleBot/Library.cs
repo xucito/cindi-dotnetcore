@@ -1,9 +1,10 @@
-﻿using Cindi.DotNetCore.BotExtensions.Models;
+﻿using Cindi.Domain.Entities.StepTemplates;
+using Cindi.Domain.Enums;
+using Cindi.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Cindi.DotNetCore.BotExtensions.Models.CommonData;
 
 namespace SampleBot
 {
@@ -13,15 +14,21 @@ namespace SampleBot
         {
             new StepTemplate()
             {
-                Name = "Calculate_Fibonacci",
-                Version = 0,
-                InputDefinitions = new Dictionary<string, string>(){
-                        {"n-2", "" + (int)InputDataType.Int},
-                        {"n-1", "" + (int)InputDataType.Int}
+                Id = "Fibonacci_stepTemplate:0",
+                InputDefinitions = new Dictionary<string, DynamicDataDescription>(){
+                        {"n-2", new DynamicDataDescription(){
+                            Type = InputDataTypes.Int
+                        } },
+
+                        {"n-1", new DynamicDataDescription(){
+                            Type = InputDataTypes.Int
+                        } }
                     },
-                OutputDefinitions = new Dictionary<string, string>()
+                OutputDefinitions = new Dictionary<string, DynamicDataDescription>()
                     {
-                         {"n", "" + (int)InputDataType.Int},
+                         {"n", new DynamicDataDescription(){
+                            Type = InputDataTypes.Int
+                        } },
                     }
             }
     };
