@@ -29,7 +29,7 @@ namespace SampleBot
         {
             services.AddWorkerBot<SampleWorkerBot>(o =>
             {
-                o.NodeURL = "http://localhost:5000";
+                o.NodeURL = "http://localhost:5021";
                 o.SleepTime = 10000;
                 o.StepTemplateLibrary = Library.StepTemplateLibrary;
                 o.AutoStart = true;
