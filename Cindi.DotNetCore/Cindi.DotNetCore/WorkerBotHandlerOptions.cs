@@ -18,5 +18,6 @@ namespace Cindi.DotNetCore.BotExtensions
         public List<StepTemplate> StepTemplateLibrary { get; set; }
         public bool AutoStart { get; set; }
         public string Id { get; set; }
+        public bool AutoRegister = true;
     }
 }

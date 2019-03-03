@@ -30,10 +30,12 @@ namespace SampleBot
             services.AddWorkerBot<SampleWorkerBot>(o =>
             {
                 o.NodeURL = "http://localhost:5021";
-                o.SleepTime = 10000;
+                o.SleepTime = 100;
                 o.StepTemplateLibrary = Library.StepTemplateLibrary;
                 o.AutoStart = true;
             });
+            services.AddSingleton<SampleService>();
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddSwaggerGen(c =>
@@ -43,7 +45,7 @@ namespace SampleBot
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, SampleWorkerBot bot)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, SampleWorkerBot bot, SampleService sampleService)
         {
             if (env.IsDevelopment())
             {
