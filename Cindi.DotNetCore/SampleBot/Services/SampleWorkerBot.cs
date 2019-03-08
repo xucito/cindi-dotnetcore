@@ -15,8 +15,12 @@ namespace SampleBot.Services
 {
     public class SampleWorkerBot: WorkerBotHandler<WorkerBotHandlerOptions>
     {
+        public bool testSuspension = true;
+        private Random random;
+
         public SampleWorkerBot(IOptionsMonitor<WorkerBotHandlerOptions> options, ILoggerFactory logger, UrlEncoder encoder): base(options, logger, encoder)
         {
+            random = new Random();
         }
 
         public override Task<UpdateStepRequest> HandleStep(Step step)
@@ -28,10 +32,27 @@ namespace SampleBot.Services
             switch(step.StepTemplateId)
             {
                 case "Fibonacci_stepTemplate:0":
-                    var result = CalculateFibonacci((Int64)DynamicDataUtility.GetData(step.Inputs, "n-1").Value, (Int64)(DynamicDataUtility.GetData(step.Inputs, "n-2").Value));
-                    updateRequest.Outputs = new Dictionary<string, object>() { { "n", result } };
-                    updateRequest.Status = StepStatuses.Successful;
-                    return Task.FromResult(updateRequest);
+                    var completeStep = true;
+                    if (testSuspension)
+                    {
+                        var n = random.Next(0, 2);
+                        if (n == 1)
+                        {
+                            completeStep = false;
+                        }
+                    }
+                    if (completeStep)
+                    {
+                        var result = CalculateFibonacci((Int64)DynamicDataUtility.GetData(step.Inputs, "n-1").Value, (Int64)(DynamicDataUtility.GetData(step.Inputs, "n-2").Value));
+                        updateRequest.Outputs = new Dictionary<string, object>() { { "n", result } };
+                        updateRequest.Status = StepStatuses.Successful;
+                        return Task.FromResult(updateRequest);
+                    }
+                    else
+                    {
+                        updateRequest.Status = StepStatuses.Suspended;
+                        return Task.FromResult(updateRequest);
+                    }
             }
 
             throw new NotImplementedException();
