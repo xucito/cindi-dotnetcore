@@ -17,13 +17,17 @@ using Cindi.DotNetCore.BotExtensions.Requests;
 using Cindi.Domain.Entities.Steps;
 using Cindi.Domain.Entities.StepTemplates;
 using Newtonsoft.Json.Linq;
+using Cindi.DotNetCore.BotExtensions.Client;
+using System.Security;
+using Cindi.DotNetCore.BotExtensions.Utility;
+using Cindi.Domain.Utilities;
 
 namespace Cindi.DotNetCore.BotExtensions
 {
     public abstract class WorkerBotHandler<TOptions> where TOptions : WorkerBotHandlerOptions
     {
         public string nodeUrl { get; }
-        private HttpClient _client;
+        private BotClient _client;
         Thread serviceThread;
         private bool started = false;
         private object threadLocker = new Object();
@@ -36,18 +40,27 @@ namespace Cindi.DotNetCore.BotExtensions
         public int loopNumber = 0;
         public string Id { get; }
         public string RunTime { get; }
+        //RSA Key used for secret decryption
+        private string privateSecretEncryptionKey;
+        private string idToken;
+
+        public string DecryptionKey { get; set; }
 
         public WorkerBotHandler(TOptions options, ILoggerFactory logger, UrlEncoder encoder)
         {
             if (options.NodeURL != null && options.NodeURL != "")
             {
                 this.nodeUrl = options.NodeURL;
-                _client = new HttpClient();
-                _client.BaseAddress = new Uri(this.nodeUrl + "/api");
+                _client = new BotClient(new BotClientOptions()
+                {
+                    Url = this.nodeUrl
+                });
                 _hasValidHttpClient = true;
             }
 
             Options = options;
+
+            RegisterBot().GetAwaiter().GetResult();
 
             waitTime = options.SleepTime;
 
@@ -72,8 +85,6 @@ namespace Cindi.DotNetCore.BotExtensions
             // Create a new Run Time Id
             RunTime = Guid.NewGuid().ToString();
 
-
-            // Initiate the registration of all templates and run loop if valid
             StartWorking();
         }
 
@@ -82,12 +93,16 @@ namespace Cindi.DotNetCore.BotExtensions
             if (options.CurrentValue.NodeURL != null && options.CurrentValue.NodeURL != "")
             {
                 this.nodeUrl = options.CurrentValue.NodeURL;
-                _client = new HttpClient();
-                _client.BaseAddress = new Uri(this.nodeUrl + "/api");
+                _client = new BotClient(new BotClientOptions()
+                {
+                    Url = this.nodeUrl
+                });
                 _hasValidHttpClient = true;
             }
 
             Options = options.CurrentValue;
+
+            RegisterBot().GetAwaiter().GetResult();
 
             waitTime = options.CurrentValue.SleepTime;
 
@@ -114,6 +129,15 @@ namespace Cindi.DotNetCore.BotExtensions
 
             // Initiate the registration of all templates and run loop if valid
             StartWorking();
+        }
+
+        public async Task<bool> RegisterBot()
+        {
+            var keys = Cindi.Domain.Utilities.SecurityUtility.GenerateRSAKeyPair(Options.KeyLength);
+            privateSecretEncryptionKey = keys.PrivateKey;
+            var encryptedIdToken = await _client.RegisterBot(Options.Id, keys.PublicKey);
+            idToken = encryptedIdToken.IdKey;
+            return true;
         }
 
 
@@ -184,16 +208,16 @@ namespace Cindi.DotNetCore.BotExtensions
 
         private async Task<bool> RegisterTemplateAsync(StepTemplate stepTemplate)
         {
-            var result = await _client.PostAsync(_client.BaseAddress + "/step-templates", new StringContent(JsonConvert.SerializeObject(new NewStepTemplateRequest()
+            var result = await _client.PostStepTemplate(new NewStepTemplateRequest()
             {
                 Name = stepTemplate.Name,
                 Version = stepTemplate.Version,
                 AllowDynamicInputs = stepTemplate.AllowDynamicInputs,
                 InputDefinitions = stepTemplate.InputDefinitions,
                 OutputDefinitions = stepTemplate.OutputDefinitions
-            }), Encoding.UTF8, "application/json"));
+            }, idToken);
 
-            if (result.IsSuccessStatusCode)
+            if (result)
             {
                 Logger.LogInformation("Successfully registered template " + stepTemplate.Id);
                 return true;
@@ -260,7 +284,7 @@ namespace Cindi.DotNetCore.BotExtensions
                         //If the handler sets the status to error than this does need to be processed
 
                         stepResult.Status = StepStatuses.Error;
-                        stepResult.Logs = "Encountered uncaught error at " + e.Message + ".";/*.Outputs.Add(new CommonData()
+                        stepResult.Log = "Encountered uncaught error at " + e.Message + ".";/*.Outputs.Add(new CommonData()
                         {
                             Type = (int)CommonData.InputDataType.ErrorMessage,
                             Id = "ErrorMessage",
@@ -275,8 +299,7 @@ namespace Cindi.DotNetCore.BotExtensions
                     {
                         try
                         {
-                            await _client.PutAsync(_client.BaseAddress + "/Steps/" + nextStep.Id, new StringContent(JsonConvert.SerializeObject(stepResult), Encoding.UTF8, "application/json"));
-                            success = true; 
+                            success = await _client.CompleteStep(stepResult, idToken);
                         }
                         catch (Exception e)
                         {
@@ -313,18 +336,9 @@ namespace Cindi.DotNetCore.BotExtensions
                 StepTemplateIds = RegisteredTemplates.Select(t => t.Id).ToArray()
             };
 
-            var result = await _client.PostAsync(_client.BaseAddress + "/Steps/assignment-requests", new StringContent(JsonConvert.SerializeObject(newRequest), Encoding.UTF8, "application/json"));
+            var result = await _client.GetNextStep(newRequest, idToken);
 
-            //Get content
-            var content = await result.Content.ReadAsStringAsync();
-
-            if (content == "null")
-            {
-                return null;
-            }
-           
-            //Read the content as a string
-            Step step = JObject.Parse(content)["result"].ToObject<Step>();
+            Step step = result;
 
             return step;
         }
@@ -367,6 +381,13 @@ namespace Cindi.DotNetCore.BotExtensions
             {
                 throw new StepTemplateDuplicateFoundException("Found duplicate step templates for step template " + step.StepTemplateId);
             }
+        }
+
+
+
+        public async Task<bool> SendStepLog(Guid stepId, string logMessage)
+        {
+            return await _client.AddStepLog(stepId, logMessage, idToken);
         }
 
         /// <summary>

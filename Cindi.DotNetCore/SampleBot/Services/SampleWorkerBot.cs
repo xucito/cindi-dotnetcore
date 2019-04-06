@@ -40,6 +40,9 @@ namespace SampleBot.Services
                         {
                             completeStep = false;
                         }
+
+
+                        var logSuccessfullySent = SendStepLog(step.Id, "Test").GetAwaiter().GetResult();
                     }
                     if (completeStep)
                     {

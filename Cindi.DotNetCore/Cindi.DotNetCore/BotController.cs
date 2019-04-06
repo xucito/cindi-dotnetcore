@@ -61,7 +61,7 @@ namespace Cindi.DotNetCore.BotExtensions
                         SubjectId = newStepId,
                         ChainId = 0,
                         Entity = JournalEntityTypes.Step,
-                        RecordedOn = DateTime.UtcNow,
+                        CreatedOn = DateTime.UtcNow,
                         Updates = new List<Update>()
                         {
                             new Update()

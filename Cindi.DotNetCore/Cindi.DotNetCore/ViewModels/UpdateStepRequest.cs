@@ -10,6 +10,6 @@ namespace Cindi.DotNetCore.BotExtensions.Requests
         public Dictionary<string, object> Outputs { get; set; }
         public string Status { get; set; }
         public int StatusCode { get; set; }
-        public string Logs { get; set; }
+        public string Log { get; set; }
     }
 }

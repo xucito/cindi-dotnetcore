@@ -19,5 +19,6 @@ namespace Cindi.DotNetCore.BotExtensions
         public bool AutoStart { get; set; }
         public string Id { get; set; }
         public bool AutoRegister = true;
+        public int KeyLength { get; set; } = 1024;
     }
 }

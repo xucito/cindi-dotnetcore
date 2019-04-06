@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cindi.DotNetCore.BotExtensi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleBot", "SampleBot\SampleBot.csproj", "{2909198D-3113-4D01-AA9E-BB4DC48D75BA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cindi.Domain", "Cindi.Domain\Cindi.Domain.csproj", "{647292D3-0655-47B2-BCB1-0B855C0CDFCE}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{2909198D-3113-4D01-AA9E-BB4DC48D75BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2909198D-3113-4D01-AA9E-BB4DC48D75BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2909198D-3113-4D01-AA9E-BB4DC48D75BA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{647292D3-0655-47B2-BCB1-0B855C0CDFCE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{647292D3-0655-47B2-BCB1-0B855C0CDFCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{647292D3-0655-47B2-BCB1-0B855C0CDFCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{647292D3-0655-47B2-BCB1-0B855C0CDFCE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

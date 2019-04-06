@@ -1,4 +1,5 @@
 ﻿using Cindi.DotNetCore.BotExtensions.Client;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -10,17 +11,19 @@ namespace SampleBot.Services
 {
     public class SampleService
     {
-        CindiClient _client;
+        UserClient _client;
         List<Thread> _testThreads = new List<Thread>();
         ILogger<SampleService> Logger;
 
-        public SampleService(ILogger<SampleService> logger)
+        public SampleService(ILogger<SampleService> logger, IConfiguration configuration)
         {
             Logger = logger;
-            _client = new CindiClient("http://localhost:5021");
+            var username = configuration.GetValue<string>("TestUser:username");
+            var password = configuration.GetValue<string>("TestUser:password");
+            _client = new UserClient("http://localhost:5021", username, password);
 
-            _client.PostStepTemplate(Library.StepTemplateLibrary.First()).GetAwaiter().GetResult();
-            _client.PostNewSequenceTemplate(Library.SequenceTemplate).GetAwaiter().GetResult();
+            _client.PostStepTemplate(new Cindi.DotNetCore.BotExtensions.Requests.NewStepTemplateRequest(Library.StepTemplateLibrary.First()), username, password).GetAwaiter().GetResult();
+            _client.PostNewSequenceTemplate(Library.SequenceTemplate, username, password).GetAwaiter().GetResult();
 
             _testThreads.Add(new Thread(async () =>
             {
@@ -31,7 +34,7 @@ namespace SampleBot.Services
                         SequenceTemplateId = Library.SequenceTemplate.Id,
                         Inputs = new Dictionary<string, object>()
                         { }
-                    });
+                    }, username, password);
                 }
             }));
 
@@ -47,7 +50,7 @@ namespace SampleBot.Services
                         {"n-1", 1 },
                         {"n-2",1 }
                     }
-                    });
+                    }, username, password);
                 }
             }));
 
