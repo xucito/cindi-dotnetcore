@@ -13,12 +13,12 @@ using System.Threading.Tasks;
 
 namespace SampleBot.Services
 {
-    public class SampleWorkerBot: WorkerBotHandler<WorkerBotHandlerOptions>
+    public class SampleWorkerBot : WorkerBotHandler<WorkerBotHandlerOptions>
     {
         public bool testSuspension = true;
         private Random random;
 
-        public SampleWorkerBot(IOptionsMonitor<WorkerBotHandlerOptions> options, ILoggerFactory logger, UrlEncoder encoder): base(options, logger, encoder)
+        public SampleWorkerBot(IOptionsMonitor<WorkerBotHandlerOptions> options, ILoggerFactory logger, UrlEncoder encoder) : base(options, logger, encoder)
         {
             random = new Random();
         }
@@ -29,7 +29,7 @@ namespace SampleBot.Services
             {
                 Id = step.Id
             };
-            switch(step.StepTemplateId)
+            switch (step.StepTemplateId)
             {
                 case "Fibonacci_stepTemplate:0":
                     var completeStep = true;
@@ -55,6 +55,19 @@ namespace SampleBot.Services
                     {
                         updateRequest.Status = StepStatuses.Suspended;
                         return Task.FromResult(updateRequest);
+                    }
+                case "Pass_Password:0":
+                    if (((string)(DynamicDataUtility.GetData(step.Inputs, "secret").Value) == "This is a test"))
+                        {
+                        {
+                            updateRequest.Outputs = new Dictionary<string, object>() { { "secret", "This is a test" } };
+                            updateRequest.Status = StepStatuses.Successful;
+                            return Task.FromResult(updateRequest);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("Failed to get password.");
                     }
             }
 

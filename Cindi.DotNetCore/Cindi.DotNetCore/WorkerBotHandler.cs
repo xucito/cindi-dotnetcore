@@ -42,6 +42,7 @@ namespace Cindi.DotNetCore.BotExtensions
         public string RunTime { get; }
         //RSA Key used for secret decryption
         private string privateSecretEncryptionKey;
+        private string publicKey;
         private string idToken;
 
         public string DecryptionKey { get; set; }
@@ -60,7 +61,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
             Options = options;
 
-            RegisterBot().GetAwaiter().GetResult();
+           // RegisterBot().GetAwaiter().GetResult();
 
             waitTime = options.SleepTime;
 
@@ -102,7 +103,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
             Options = options.CurrentValue;
 
-            RegisterBot().GetAwaiter().GetResult();
+           // RegisterBot().GetAwaiter().GetResult();
 
             waitTime = options.CurrentValue.SleepTime;
 
@@ -131,14 +132,15 @@ namespace Cindi.DotNetCore.BotExtensions
             StartWorking();
         }
 
-        public async Task<bool> RegisterBot()
+       /* public async Task<bool> RegisterBot()
         {
             var keys = Cindi.Domain.Utilities.SecurityUtility.GenerateRSAKeyPair(Options.KeyLength);
             privateSecretEncryptionKey = keys.PrivateKey;
             var encryptedIdToken = await _client.RegisterBot(Options.Id, keys.PublicKey);
             idToken = encryptedIdToken.IdKey;
+            publicKey = keys.PublicKey;
             return true;
-        }
+        }*/
 
 
         /// <summary>
@@ -274,6 +276,12 @@ namespace Cindi.DotNetCore.BotExtensions
                 {
                     Logger.LogInformation("Processing step " + nextStep.Id);
                     stepResult.Id = nextStep.Id;
+
+              /*      var keyTest = Domain.Utilities.SecurityUtility.RsaEncryptWithPublic("This is a secret", publicKey);
+
+                    var decrypted = Domain.Utilities.SecurityUtility.RsaDecryptWithPrivate(keyTest, privateSecretEncryptionKey);
+                    */
+                    nextStep.DecryptStepSecrets(Domain.Enums.EncryptionProtocol.RSA, RegisteredTemplates.Where(rt => rt.Id == nextStep.StepTemplateId).First(), _client.keyPair.PrivateKey, false);
 
                     try
                     {

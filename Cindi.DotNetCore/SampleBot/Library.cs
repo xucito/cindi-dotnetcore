@@ -34,9 +34,29 @@ namespace SampleBot
                     }
         };
 
+        public static StepTemplate SecretStepTemplate = new StepTemplate()
+        {
+            Id = "Pass_Password:0",
+            InputDefinitions = new Dictionary<string, DynamicDataDescription>(){
+
+                        {"secret", new DynamicDataDescription(){
+                            Type = InputDataTypes.Secret,
+                            Description = ""
+                        }}
+                    },
+            OutputDefinitions = new Dictionary<string, DynamicDataDescription>()
+                    {
+                         {"secret", new DynamicDataDescription(){
+                            Type = InputDataTypes.Secret,
+                            Description = ""
+                        }},
+                    }
+        };
+
         public static List<StepTemplate> StepTemplateLibrary = new List<StepTemplate>()
         {
-            StepTemplate
+            StepTemplate,
+            SecretStepTemplate
         };
 
         public static SequenceTemplate SequenceTemplate = new SequenceTemplate()

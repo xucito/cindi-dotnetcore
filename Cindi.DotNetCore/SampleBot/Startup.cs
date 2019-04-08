@@ -29,9 +29,11 @@ namespace SampleBot
         {
             services.AddWorkerBot<SampleWorkerBot>(o =>
             {
-                o.NodeURL = "http://localhost:5021";
+                o.NodeURL = Configuration.GetValue<string>("cindiurl");
                 o.SleepTime = 100;
-                o.StepTemplateLibrary = Library.StepTemplateLibrary;
+                o.StepTemplateLibrary = new List<Cindi.Domain.Entities.StepTemplates.StepTemplate>() {
+                    Library.SecretStepTemplate
+                };
                 o.AutoStart = true;
             });
             services.AddSingleton<SampleService>();

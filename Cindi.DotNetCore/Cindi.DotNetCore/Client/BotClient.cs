@@ -23,8 +23,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
         private string _url;
         private double _nonce;
         private string _botId;
-        private string _privateKey;
-        private RSAEncodedKeyPair keyPair;
+        public RSAEncodedKeyPair keyPair;
 
         public BotClient(string url)
         {

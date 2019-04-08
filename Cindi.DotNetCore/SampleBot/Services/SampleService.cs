@@ -20,7 +20,7 @@ namespace SampleBot.Services
             Logger = logger;
             var username = configuration.GetValue<string>("TestUser:username");
             var password = configuration.GetValue<string>("TestUser:password");
-            _client = new UserClient("http://localhost:5021", username, password);
+            _client = new UserClient(configuration.GetValue<string>("cindiurl"), username, password);
 
             _client.PostStepTemplate(new Cindi.DotNetCore.BotExtensions.Requests.NewStepTemplateRequest(Library.StepTemplateLibrary.First()), username, password).GetAwaiter().GetResult();
             _client.PostNewSequenceTemplate(Library.SequenceTemplate, username, password).GetAwaiter().GetResult();
@@ -29,12 +29,12 @@ namespace SampleBot.Services
             {
                 while (true)
                 {
-                    await _client.PostNewSequence(new Cindi.DotNetCore.BotExtensions.ViewModels.SequenceInput()
+                    /*await _client.PostNewSequence(new Cindi.DotNetCore.BotExtensions.ViewModels.SequenceInput()
                     {
                         SequenceTemplateId = Library.SequenceTemplate.Id,
                         Inputs = new Dictionary<string, object>()
                         { }
-                    }, username, password);
+                    }, username, password);*/
                 }
             }));
 
@@ -44,13 +44,21 @@ namespace SampleBot.Services
                 {
                     await _client.PostNewStep(new Cindi.DotNetCore.BotExtensions.ViewModels.StepInput()
                     {
+                        StepTemplateId = Library.SecretStepTemplate.Id,
+                        Inputs = new Dictionary<string, object>()
+                    {
+                        {"secret", "This is a test" }
+                    }
+                    }, username, password);
+                    /*await _client.PostNewStep(new Cindi.DotNetCore.BotExtensions.ViewModels.StepInput()
+                    {
                         StepTemplateId = Library.StepTemplate.Id,
                         Inputs = new Dictionary<string, object>()
                     {
                         {"n-1", 1 },
                         {"n-2",1 }
                     }
-                    }, username, password);
+                    }, username, password);*/
                 }
             }));
 
