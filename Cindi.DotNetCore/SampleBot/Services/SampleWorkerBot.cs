@@ -23,6 +23,12 @@ namespace SampleBot.Services
             random = new Random();
         }
 
+
+        public SampleWorkerBot(WorkerBotHandlerOptions options, ILoggerFactory logger, UrlEncoder encoder) : base(options, logger, encoder)
+        {
+            random = new Random();
+        }
+
         public override Task<UpdateStepRequest> HandleStep(Step step)
         {
             var updateRequest = new UpdateStepRequest()
@@ -60,7 +66,7 @@ namespace SampleBot.Services
                     if (((string)(DynamicDataUtility.GetData(step.Inputs, "secret").Value) == "This is a test"))
                         {
                         {
-                            updateRequest.Outputs = new Dictionary<string, object>() { { "secret", "This is a test" } };
+                            updateRequest.Outputs = new Dictionary<string, object>() { { "secret", "I unencrypted the value " + ((string)(DynamicDataUtility.GetData(step.Inputs, "secret").Value))} };
                             updateRequest.Status = StepStatuses.Successful;
                             return Task.FromResult(updateRequest);
                         }

@@ -25,7 +25,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public static bool DoesStepMatchesTemplate(Step step, StepTemplate stepTemplate)
         {
-            return step.StepTemplateId == stepTemplate.Id;
+            return step.StepTemplateId == stepTemplate.ReferenceId;
         }
 
         public static string GenerateName(int len)

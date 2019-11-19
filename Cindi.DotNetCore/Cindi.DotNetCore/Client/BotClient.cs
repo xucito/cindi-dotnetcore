@@ -1,6 +1,6 @@
-﻿using Cindi.Domain.Entities.SequencesTemplates;
-using Cindi.Domain.Entities.Steps;
+﻿using Cindi.Domain.Entities.Steps;
 using Cindi.Domain.Entities.StepTemplates;
+using Cindi.Domain.Entities.WorkflowsTemplates;
 using Cindi.Domain.Utilities;
 using Cindi.Domain.ValueObjects;
 using Cindi.DotNetCore.BotExtensions.Exceptions;
@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Cindi.DotNetCore.BotExtensions.Client
@@ -24,12 +25,13 @@ namespace Cindi.DotNetCore.BotExtensions.Client
         private double _nonce;
         private string _botId;
         public RSAEncodedKeyPair keyPair;
+        public int maxAttempts = 3;
 
         public BotClient(string url)
         {
             _url = url;
             _nonce = 0;
-            keyPair = SecurityUtility.GenerateRSAKeyPair();
+            keyPair = SecurityUtility.GenerateRSAKeyPair(2048);
             var result = RegisterBot("", keyPair.PublicKey).GetAwaiter().GetResult();
             _botId = result.IdKey;
         }
@@ -38,7 +40,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
         {
             _url = options.Url;
             _nonce = 0;
-            keyPair = SecurityUtility.GenerateRSAKeyPair();
+            keyPair = SecurityUtility.GenerateRSAKeyPair(2048);
             var result = RegisterBot("", keyPair.PublicKey).GetAwaiter().GetResult();
             _botId = result.IdKey;
         }
@@ -46,36 +48,151 @@ namespace Cindi.DotNetCore.BotExtensions.Client
         private void AuthorizeClientWithBotId(HttpClient client)
         {
             _nonce++;
-            var nonceKey = SecurityUtility.RsaEncryptWithPrivate(""+_nonce, keyPair.PrivateKey);
+            var nonceKey = SecurityUtility.RsaEncryptWithPrivate("" + _nonce, keyPair.PrivateKey);
             client.DefaultRequestHeaders.Add("BotKey", _botId);
             client.DefaultRequestHeaders.Add("Nonce", nonceKey);
         }
 
+        private async Task<JObject> SendGetRequest(string resourcePath, bool authorize)
+        {
+            var attempt = 0;
+            Exception lastException = new Exception();
+            while (attempt < maxAttempts)
+            {
+                try
+                {
+                    using (HttpClient client = new HttpClient())
+                    {
+                        client.BaseAddress = new Uri(_url);
+
+                        if (authorize)
+                        {
+                            AuthorizeClientWithBotId(client);
+                        }
+
+                        var response = await client.GetAsync(resourcePath);
+
+                        var content = await response.Content.ReadAsStringAsync();
+
+                        if (response.IsSuccessStatusCode)
+                        {
+
+                            if (content == null)
+                            {
+                                return null;
+                            }
+                            return JObject.Parse(content).Value<JObject>("result");
+                        }
+                        else
+                        {
+                            throw new HttpRequestException("Server responded with " + response.StatusCode + ": " + content);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to send GET request " + resourcePath + " with message " + e.Message + ", will sleep for 1 second and try again, attempt " + attempt);
+                    Thread.Sleep(1000);
+                    lastException = e;
+                }
+                attempt++;
+            }
+            throw lastException;
+        }
+
+        private async Task<JObject> SendPostRequest(string resourcePath, object payload, bool authorize)
+        {
+            var attempt = 0;
+            Exception lastException = new Exception();
+            while (attempt < maxAttempts)
+            {
+                try
+                {
+                    using (HttpClient client = new HttpClient())
+                    {
+                        client.BaseAddress = new Uri(_url);
+
+                        if (authorize)
+                        {
+                            AuthorizeClientWithBotId(client);
+                        }
+
+                        var response = await client.PostAsync(resourcePath, new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"));
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var content = await response.Content.ReadAsStringAsync();
+
+                            return JObject.Parse(content);
+                        }
+                        else
+                        {
+                            throw new RegistrationFailureException();
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to send POST request " + resourcePath + " with message " + e.Message + ", will sleep for 1 second and try again, attempt " + attempt);
+                    Thread.Sleep(1000);
+                    lastException = e;
+                }
+                attempt++;
+            }
+
+            throw lastException;
+        }
+
+        private async Task<JObject> SendPutRequest(string resourcePath, object payload, bool authorize)
+        {
+            var attempt = 0;
+            Exception lastException = new Exception();
+            while (attempt < maxAttempts)
+            {
+                try
+                {
+                    using (HttpClient client = new HttpClient())
+                    {
+                        client.BaseAddress = new Uri(_url);
+
+                        if (authorize)
+                        {
+                            AuthorizeClientWithBotId(client);
+                        }
+
+                        var response = await client.PutAsync(resourcePath, new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"));
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var content = await response.Content.ReadAsStringAsync();
+
+                            return JObject.Parse(content);
+                        }
+                        else
+                        {
+                            throw new RegistrationFailureException();
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed to send PUT request " + resourcePath + " with message " + e.Message + ", will sleep for 1 second and try again, attempt " + attempt);
+                    Thread.Sleep(1000);
+                    lastException = e;
+                }
+                attempt++;
+            }
+
+            throw lastException;
+        }
+
         public async Task<NewBotKeyResult> RegisterBot(string name, string rsaPublicKey)
         {
-            using (HttpClient client = new HttpClient())
+            return (await SendPostRequest("/api/bot-keys", new
             {
-                client.BaseAddress = new Uri(_url);
-
-                var response = await client.PostAsync("/api/bot-keys", new StringContent(JsonConvert.SerializeObject(
-                    new
-                    {
-                        botKeyName = name,
-                        publicEncryptionKey = rsaPublicKey
-                    }), Encoding.UTF8, "application/json"));
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-
-                    NewBotKeyResult botKeyResult = JObject.Parse(content)["result"].ToObject<NewBotKeyResult>();
-                    return botKeyResult;
-                }
-                else
-                {
-                    throw new RegistrationFailureException();
-                }
-            }
+                botKeyName = name,
+                publicEncryptionKey = rsaPublicKey
+            }, false)).Value<JObject>("result").ToObject<NewBotKeyResult>();
         }
 
         public void SetIdToken(string botId)
@@ -88,164 +205,50 @@ namespace Cindi.DotNetCore.BotExtensions.Client
         /// </summary>
         /// <param name="input">Returns task Id</param>
         /// <returns></returns>
-        public async Task<string> PostNewSequence(SequenceInput input, string idToken)
+        public async Task<string> PostNewWorkflow(WorkflowInput input, string idToken)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_url);
-                AuthorizeClientWithBotId(client);
-
-                var response = await client.PostAsync("/api/sequences", new StringContent(JsonConvert.SerializeObject(input), Encoding.UTF8, "application/json"));
-
-                var contents = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return contents;
-                }
-                else
-                {
-                    throw new Exception("Error sending sequence request, returned with error " + response.StatusCode + " with message " + contents);
-                }
-            }
+            return (await SendPostRequest("/api/Workflows", input, true)).Value<string>("objectRefId");
         }
 
-        public async Task<bool> PostNewSequenceTemplate(SequenceTemplate sequenceTemplate, string idToken)
+        public async Task<string> PostNewWorkflowTemplate(WorkflowTemplate WorkflowTemplate, string idToken)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_url);
-                AuthorizeClientWithBotId(client);
-
-                var body = JsonConvert.SerializeObject(sequenceTemplate);
-                var response = await client.PostAsync("/api/sequence-templates", new StringContent(body, Encoding.UTF8, "application/json"));
-
-                var contents = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-                else
-                {
-                    throw new Exception("Error sending sequence template request, returned with error " + response.StatusCode);
-                }
-            }
+            return (await SendPostRequest("/api/Workflow-templates", WorkflowTemplate, true)).Value<string>("objectRefId");
         }
 
-        public async Task<bool> PostNewStep(StepInput stepInput, string idToken)
+        public async Task<string> PostNewStep(StepInput stepInput, string idToken)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_url);
-                AuthorizeClientWithBotId(client);
-
-                var response = await client.PostAsync("/api/steps", new StringContent(JsonConvert.SerializeObject(stepInput), Encoding.UTF8, "application/json"));
-
-                var contents = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-                else
-                {
-                    throw new Exception("Error sending sequence template request, returned with error " + response.StatusCode);
-                }
-            }
+            return (await SendPostRequest("/api/steps", stepInput, true)).Value<string>("objectRefId");
         }
 
-        public async Task<bool> AddStepLog(Guid stepId, string log, string idToken)
+        public async Task<string> AddStepLog(Guid stepId, string log, string idToken)
         {
-            using (HttpClient client = new HttpClient())
+            return (await SendPostRequest("/api/steps/" + stepId.ToString() + "/logs", new
             {
-                client.BaseAddress = new Uri(_url);
-                AuthorizeClientWithBotId(client);
-
-                var response = await client.PostAsync("/api/steps/" + stepId.ToString() + "/logs", new StringContent(JsonConvert.SerializeObject(new
-                {
-                    Log = log
-                }), Encoding.UTF8, "application/json"));
-
-                var contents = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-                else
-                {
-                    throw new Exception("Error sending sequence request, returned with error " + response.StatusCode + " with message " + contents);
-                }
-            }
+                Log = log
+            }, true)).Value<string>("id");
         }
 
-        public async Task<bool> PostStepTemplate(NewStepTemplateRequest stepTemplate, string idToken)
+        public async Task<string> PostStepTemplate(NewStepTemplateRequest stepTemplate, string idToken)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_url);
-
-                AuthorizeClientWithBotId(client);
-
-                var response = await client.PostAsync("/api/step-templates", new StringContent(JsonConvert.SerializeObject(stepTemplate), Encoding.UTF8, "application/json"));
-
-                var contents = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-                else
-                {
-                    throw new Exception("Error sending sequence template request, returned with error " + response.StatusCode);
-                }
-            }
+            return (await SendPostRequest("/api/step-templates", stepTemplate, true)).Value<string>("objectRefId");
         }
 
-        public async Task<bool> CompleteStep(UpdateStepRequest request, string idToken)
+        public async Task<string> CompleteStep(UpdateStepRequest request, string idToken)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_url);
-                AuthorizeClientWithBotId(client);
-
-                var response = await client.PutAsync("/api/steps/" + request.Id, new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json"));
-
-                var contents = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    return true;
-                }
-                else
-                {
-                    throw new Exception("Error sending sequence template request, returned with error " + response.StatusCode);
-                }
-            }
+            return (await SendPutRequest("/api/steps/" + request.Id, request, true)).Value<string>("objectRefId");
         }
 
         public async Task<Step> GetNextStep(StepRequest request, string idToken)
         {
-            using (HttpClient client = new HttpClient())
+            var stepRequestResult = (await SendPostRequest("/api/steps/assignment-requests", request, true));
+
+            if (stepRequestResult == null)
             {
-                client.BaseAddress = new Uri(_url);
-                AuthorizeClientWithBotId(client);
+                return null;
 
-                var result = await client.PostAsync("/api/steps/assignment-requests", new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json"));
-
-                var content = await result.Content.ReadAsStringAsync();
-
-                if (content == "null")
-                {
-                    return null;
-                }
-
-                //Read the content as a string
-                Step step = JObject.Parse(content)["result"].ToObject<Step>();
-
-                return step;
             }
+
+            return stepRequestResult["result"].ToObject<Step>();
         }
     }
 }

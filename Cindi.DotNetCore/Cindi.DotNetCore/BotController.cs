@@ -55,12 +55,9 @@ namespace Cindi.DotNetCore.BotExtensions
                 Id = newStepId,
                 StepTemplateId = request.StepTemplateId,
                 CreatedOn = DateTime.UtcNow,
-                Journal = new Domain.Entities.JournalEntries.Journal(new List<JournalEntry>() {
+                Journal = new Domain.Entities.JournalEntries.Journal(
                     new JournalEntry()
                     {
-                        SubjectId = newStepId,
-                        ChainId = 0,
-                        Entity = JournalEntityTypes.Step,
                         CreatedOn = DateTime.UtcNow,
                         Updates = new List<Update>()
                         {
@@ -71,7 +68,7 @@ namespace Cindi.DotNetCore.BotExtensions
                                 Type = UpdateType.Override
                             }
                         }
-                    } }),
+                    } ),
                 Inputs = request.Inputs
             }));
         }

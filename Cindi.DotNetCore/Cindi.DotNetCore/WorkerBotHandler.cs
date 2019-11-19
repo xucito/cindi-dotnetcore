@@ -40,9 +40,6 @@ namespace Cindi.DotNetCore.BotExtensions
         public int loopNumber = 0;
         public string Id { get; }
         public string RunTime { get; }
-        //RSA Key used for secret decryption
-        private string privateSecretEncryptionKey;
-        private string publicKey;
         private string idToken;
 
         public string DecryptionKey { get; set; }
@@ -61,7 +58,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
             Options = options;
 
-           // RegisterBot().GetAwaiter().GetResult();
+            // RegisterBot().GetAwaiter().GetResult();
 
             waitTime = options.SleepTime;
 
@@ -103,7 +100,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
             Options = options.CurrentValue;
 
-           // RegisterBot().GetAwaiter().GetResult();
+            // RegisterBot().GetAwaiter().GetResult();
 
             waitTime = options.CurrentValue.SleepTime;
 
@@ -132,15 +129,15 @@ namespace Cindi.DotNetCore.BotExtensions
             StartWorking();
         }
 
-       /* public async Task<bool> RegisterBot()
-        {
-            var keys = Cindi.Domain.Utilities.SecurityUtility.GenerateRSAKeyPair(Options.KeyLength);
-            privateSecretEncryptionKey = keys.PrivateKey;
-            var encryptedIdToken = await _client.RegisterBot(Options.Id, keys.PublicKey);
-            idToken = encryptedIdToken.IdKey;
-            publicKey = keys.PublicKey;
-            return true;
-        }*/
+        /* public async Task<bool> RegisterBot()
+         {
+             var keys = Cindi.Domain.Utilities.SecurityUtility.GenerateRSAKeyPair(Options.KeyLength);
+             privateSecretEncryptionKey = keys.PrivateKey;
+             var encryptedIdToken = await _client.RegisterBot(Options.Id, keys.PublicKey);
+             idToken = encryptedIdToken.IdKey;
+             publicKey = keys.PublicKey;
+             return true;
+         }*/
 
 
         /// <summary>
@@ -192,7 +189,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public void QueueTemplateForRegistration(StepTemplate stepTemplate)
         {
-            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.Id == stepTemplate.Id).Count();
+            var foundTemplateCount = RegisteredTemplates.Where(rt => rt.ReferenceId == stepTemplate.ReferenceId).Count();
 
             if (foundTemplateCount == 0)
             {
@@ -219,7 +216,7 @@ namespace Cindi.DotNetCore.BotExtensions
                 OutputDefinitions = stepTemplate.OutputDefinitions
             }, idToken);
 
-            if (result)
+            if (result != null)
             {
                 Logger.LogInformation("Successfully registered template " + stepTemplate.Id);
                 return true;
@@ -277,33 +274,29 @@ namespace Cindi.DotNetCore.BotExtensions
                     Logger.LogInformation("Processing step " + nextStep.Id);
                     stepResult.Id = nextStep.Id;
 
-              /*      var keyTest = Domain.Utilities.SecurityUtility.RsaEncryptWithPublic("This is a secret", publicKey);
+                    /*      var keyTest = Domain.Utilities.SecurityUtility.RsaEncryptWithPublic("This is a secret", publicKey);
 
-                    var decrypted = Domain.Utilities.SecurityUtility.RsaDecryptWithPrivate(keyTest, privateSecretEncryptionKey);
-                    */
-                    nextStep.DecryptStepSecrets(Domain.Enums.EncryptionProtocol.RSA, RegisteredTemplates.Where(rt => rt.Id == nextStep.StepTemplateId).First(), _client.keyPair.PrivateKey, false);
+                          var decrypted = Domain.Utilities.SecurityUtility.RsaDecryptWithPrivate(keyTest, privateSecretEncryptionKey);
+                          */
+                    nextStep.Inputs = DynamicDataUtility.DecryptDynamicData(RegisteredTemplates.Where(rt => rt.ReferenceId == nextStep.StepTemplateId).First().InputDefinitions, nextStep.Inputs, Domain.Enums.EncryptionProtocol
+                        .RSA, _client.keyPair.PrivateKey, false);
 
+                    var template = RegisteredTemplates.Where(rt => rt.ReferenceId == nextStep.StepTemplateId).First();
                     try
                     {
                         stepResult = await ProcessStep(nextStep);
+                        stepResult.Outputs = DynamicDataUtility.EncryptDynamicData(template.OutputDefinitions, stepResult.Outputs, Domain.Enums.EncryptionProtocol.RSA, _client.keyPair.PrivateKey, false);
                     }
                     catch (Exception e)
                     {
-                        //If the handler sets the status to error than this does need to be processed
-
+                        await SendStepLog(nextStep.Id, "Encountered unexcepted error " + e.Message + Environment.NewLine + e.StackTrace);
                         stepResult.Status = StepStatuses.Error;
-                        stepResult.Log = "Encountered uncaught error at " + e.Message + ".";/*.Outputs.Add(new CommonData()
-                        {
-                            Type = (int)CommonData.InputDataType.ErrorMessage,
-                            Id = "ErrorMessage",
-                            Value = e.Message
-                        });*/
-
+                        stepResult.Log = "Encountered uncaught error at " + e.Message + ".";
                     }
 
                     int count = 0;
-                    bool success = false;
-                    while (!success)
+                    string success = "";
+                    while (success == "")
                     {
                         try
                         {
@@ -341,7 +334,7 @@ namespace Cindi.DotNetCore.BotExtensions
         {
             var newRequest = new StepRequest
             {
-                StepTemplateIds = RegisteredTemplates.Select(t => t.Id).ToArray()
+                StepTemplateIds = RegisteredTemplates.Select(t => t.ReferenceId).ToArray()
             };
 
             var result = await _client.GetNextStep(newRequest, idToken);
@@ -375,7 +368,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
         public bool ValidateStep(Step step)
         {
-            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.Id == step.StepTemplateId).Count();
+            var foundStepTemplatesCount = RegisteredTemplates.Where(rt => rt.ReferenceId == step.StepTemplateId).Count();
 
             if (foundStepTemplatesCount == 0)
             {
@@ -393,7 +386,7 @@ namespace Cindi.DotNetCore.BotExtensions
 
 
 
-        public async Task<bool> SendStepLog(Guid stepId, string logMessage)
+        public async Task<string> SendStepLog(Guid stepId, string logMessage)
         {
             return await _client.AddStepLog(stepId, logMessage, idToken);
         }

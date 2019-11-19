@@ -1,6 +1,8 @@
-﻿using Cindi.Domain.Entities.SequencesTemplates;
-using Cindi.Domain.Entities.Steps;
+﻿using Cindi.Domain.Entities.Steps;
 using Cindi.Domain.Entities.StepTemplates;
+using Cindi.Domain.Entities.WorkflowsTemplates;
+using Cindi.Domain.Entities.WorkflowTemplates.Conditions;
+using Cindi.Domain.Entities.WorkflowTemplates.ValueObjects;
 using Cindi.Domain.Enums;
 using Cindi.Domain.ValueObjects;
 using System;
@@ -16,7 +18,7 @@ namespace SampleBot
 
         public static StepTemplate StepTemplate = new StepTemplate()
         {
-            Id = "Fibonacci_stepTemplate:0",
+            ReferenceId = "Fibonacci_stepTemplate:0",
             InputDefinitions = new Dictionary<string, DynamicDataDescription>(){
                         {"n-2", new DynamicDataDescription(){
                             Type = InputDataTypes.Int
@@ -36,10 +38,10 @@ namespace SampleBot
 
         public static StepTemplate SecretStepTemplate = new StepTemplate()
         {
-            Id = "Pass_Password:0",
+            ReferenceId = "Pass_Password:0",
             InputDefinitions = new Dictionary<string, DynamicDataDescription>(){
 
-                        {"secret", new DynamicDataDescription(){
+                        {"Secret", new DynamicDataDescription(){
                             Type = InputDataTypes.Secret,
                             Description = ""
                         }}
@@ -59,88 +61,225 @@ namespace SampleBot
             SecretStepTemplate
         };
 
-        public static SequenceTemplate SequenceTemplate = new SequenceTemplate()
+        public static WorkflowTemplate WorkflowTemplate = new WorkflowTemplate()
         {
-            Id = "SimpleSequence:1",
-            LogicBlocks = new List<LogicBlock>()
+            ReferenceId = "SimpleWorkflow:1",
+            LogicBlocks = new Dictionary<string, LogicBlock>()
             {
-                new LogicBlock()
+                {"0", new LogicBlock()
                 {
-                    Id = 0,
-                    Condition = "OR",
-                    PrerequisiteSteps = new List<PrerequisiteStep>
+                    Dependencies = new ConditionGroup
                     {
                     },
-                    SubsequentSteps = new List<SubsequentStep> {
+                    SubsequentSteps = new Dictionary<string, SubsequentStep> {
+                        {
+                        "0",
                          new SubsequentStep(){
-                             StepTemplateId =StepTemplate.Id,
-                             StepRefId = 0,
-                                      Mappings = new List<Mapping>(){
+                             StepTemplateId = StepTemplate.ReferenceId,
+                                      Mappings = new Dictionary<string, Mapping>(){
+                                          {"n-1",
                                       new Mapping()
                                        {
                                            DefaultValue = new DefaultValue(){
                                                Value = 1
-                                           },
-                                           StepInputId = "n-1"
-                                       },
+                                           }
+                                       }
+                                          },
+                                          {"n-2",
                                       new Mapping(){
                                            DefaultValue = new DefaultValue(){
                                                Value = 1
-                                           },
-                                           StepInputId = "n-2"
+                                           }
                                        }
                                    }
+                                      }
+                         }
                          } }
+                }
                 },
-                new LogicBlock()
+                {"1", new LogicBlock()
                 {
-                    Id = 1,
-                    Condition = "AND",
-                    PrerequisiteSteps = new List<PrerequisiteStep>
+                    Dependencies = new ConditionGroup
                     {
-                        new PrerequisiteStep()
+                        Operator = OperatorStatements.AND,
+                        Conditions = new Dictionary<string, Condition>()
                         {
-                            StepRefId = 0,
+                            { "0",
+                           new StepStatusCondition()
+                           {
+                                                           StepName = "0",
                             Status = StepStatuses.Successful,
                             StatusCode = 0
+                           }
+                            }
                         }
                     },
-                    SubsequentSteps = new List<SubsequentStep> {
+                    SubsequentSteps = new Dictionary<string, SubsequentStep> {
+                        { "1",
                          new SubsequentStep(){
-                             StepTemplateId =StepTemplate.Id,
-                             StepRefId = 1,
-                                      Mappings = new List<Mapping>(){
+                             StepTemplateId =StepTemplate.ReferenceId,
+                                      Mappings = new Dictionary<string, Mapping>(){
+                                      {"n-1",
                                       new Mapping()
                                        {
                                           OutputReferences = new StepOutputReference[]
                                           {
                                               new StepOutputReference()
                                               {
-                                                  StepRefId = 0,
+                                                  StepName = "0",
                                                   OutputId = "n"
                                               }
                                           },
                                            DefaultValue = new DefaultValue(){
                                                Value = 1
-                                           },
-                                           StepInputId = "n-1"
-                                       },
+                                           }
+                                       }
+                                          },
+                                          {
+                                              "n-2",
                                       new Mapping(){
                                             OutputReferences = new StepOutputReference[]
                                             {
                                                 new StepOutputReference()
                                                 {
-                                                    StepRefId = 0,
+                                                    StepName = "0",
                                                     OutputId = "n"
                                                 }
                                             },
                                            DefaultValue = new DefaultValue(){
                                                Value = 1
-                                           },
-                                           StepInputId = "n-2"
+                                           }
+                                       }
+                                      }
+                                      }
+                                   }
+                         } }
+                }
+                }
+            }
+        };
+
+        public static WorkflowTemplate WorkflowTemplate2 = new WorkflowTemplate()
+        {
+            ReferenceId = "SimpleWorkflowWithInputs:1",
+            InputDefinitions = new Dictionary<string, DynamicDataDescription>()
+            {
+                {"n-1", new DynamicDataDescription()
+                {
+                    Type = InputDataTypes.Int
+                }
+                },
+
+                { "n-2", new DynamicDataDescription()
+                {
+                    Type = InputDataTypes.Int
+                }
+                }
+        },
+            LogicBlocks = new Dictionary<string, LogicBlock>()
+            {
+                { "0", new LogicBlock()
+                {
+                    Dependencies = new ConditionGroup
+                    {
+                    },
+                    SubsequentSteps = new Dictionary<string, SubsequentStep> {
+                        { "0",
+                         new SubsequentStep(){
+                             StepTemplateId = StepTemplate.ReferenceId,
+                                      Mappings = new Dictionary<string, Mapping>(){
+                                          {
+                                               "n-1",
+                                      new Mapping()
+                                       {
+                                          OutputReferences = new StepOutputReference[]
+                                          {
+                                              new StepOutputReference()
+                                              {
+                                                  StepName = ReservedValues.WorkflowStartStepName,
+                                                  OutputId = "n-1"
+                                              }
+                                          },
+                                           DefaultValue = new DefaultValue(){
+                                               Value = 1
+                                           }
+                                       } },
+                                      {"n-2",
+                                      new Mapping(){
+                                           OutputReferences = new StepOutputReference[]
+                                          {
+                                              new StepOutputReference()
+                                              {
+                                                  StepName = ReservedValues.WorkflowStartStepName,
+                                                  OutputId = "n-2"
+                                              }
+                                          },
+                                           DefaultValue = new DefaultValue(){
+                                               Value = 1
+                                           }
                                        }
                                    }
                          } }
+                        }
+                    }
+                }
+                },
+                    {"1", new LogicBlock()
+                {
+                    Dependencies = new ConditionGroup
+                    {
+                        Operator = OperatorStatements.AND,
+                        Conditions = new Dictionary<string, Condition>()
+                        {
+                            { "0",
+                           new StepStatusCondition()
+                           {
+                                                           StepName = "0",
+                            Status = StepStatuses.Successful,
+                            StatusCode = 0
+                           }
+                            }
+                        }
+                    },
+                    SubsequentSteps = new Dictionary<string, SubsequentStep>{
+                        { "1",
+                         new SubsequentStep(){
+                             StepTemplateId =StepTemplate.ReferenceId,
+                                      Mappings = new Dictionary<string, Mapping>(){
+                                          {"n-1",
+                                      new Mapping()
+                                       {
+                                          OutputReferences = new StepOutputReference[]
+                                          {
+                                              new StepOutputReference()
+                                              {
+                                                  StepName = "0",
+                                                  OutputId = "n"
+                                              }
+                                          },
+                                           DefaultValue = new DefaultValue(){
+                                               Value = 1
+                                           }
+                                       } },
+                                      {"n-2",
+                                      new Mapping(){
+                                            OutputReferences = new StepOutputReference[]
+                                            {
+                                                new StepOutputReference()
+                                                {
+                                                    StepName = "0",
+                                                    OutputId = "n"
+                                                }
+                                            },
+                                           DefaultValue = new DefaultValue(){
+                                               Value = 1
+                                           }
+                                       }
+                                   }
+                         } }
+                    }
+                }
+                    }
                 }
             }
         };

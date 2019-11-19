@@ -4,10 +4,10 @@ using System.Text;
 
 namespace Cindi.DotNetCore.BotExtensions.ViewModels
 {
-    public class SequenceInput
+    public class WorkflowInput
     {
         public string Name { get; set; }
-        public string SequenceTemplateId { get; set; }
+        public string WorkflowTemplateId { get; set; }
         public Dictionary<string, object> Inputs { get; set; }
     }
 }

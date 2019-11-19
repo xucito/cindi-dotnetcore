@@ -32,7 +32,8 @@ namespace SampleBot
                 o.NodeURL = Configuration.GetValue<string>("cindiurl");
                 o.SleepTime = 100;
                 o.StepTemplateLibrary = new List<Cindi.Domain.Entities.StepTemplates.StepTemplate>() {
-                    Library.SecretStepTemplate
+                    Library.SecretStepTemplate,
+                    Library.StepTemplate
                 };
                 o.AutoStart = true;
             });
