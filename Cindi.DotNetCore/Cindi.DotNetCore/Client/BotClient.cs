@@ -19,13 +19,22 @@ using System.Threading.Tasks;
 
 namespace Cindi.DotNetCore.BotExtensions.Client
 {
-    public partial class BotClient
+    public partial class BotClient : IBotClient
     {
         private string _url;
         private double _nonce;
         private string _botId;
         public RSAEncodedKeyPair keyPair;
-        public int maxAttempts = 3;
+        public int maxAttempts = 10;
+        HttpClientHandler clientHandler
+        {
+            get
+            {
+                var newHandler = new HttpClientHandler();
+                newHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+                return newHandler;
+            }
+        }
 
         public BotClient(string url)
         {
@@ -61,7 +70,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             {
                 try
                 {
-                    using (HttpClient client = new HttpClient())
+                    using (HttpClient client = new HttpClient(clientHandler))
                     {
                         client.BaseAddress = new Uri(_url);
 
@@ -91,8 +100,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed to send GET request " + resourcePath + " with message " + e.Message + ", will sleep for 1 second and try again, attempt " + attempt);
-                    Thread.Sleep(1000);
+                    BackOff(attempt, "GET " + resourcePath, e, maxAttempts);
                     lastException = e;
                 }
                 attempt++;
@@ -108,7 +116,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             {
                 try
                 {
-                    using (HttpClient client = new HttpClient())
+                    using (HttpClient client = new HttpClient(clientHandler))
                     {
                         client.BaseAddress = new Uri(_url);
 
@@ -133,8 +141,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed to send POST request " + resourcePath + " with message " + e.Message + ", will sleep for 1 second and try again, attempt " + attempt);
-                    Thread.Sleep(1000);
+                    BackOff(attempt, "GET " + resourcePath, e, maxAttempts);
                     lastException = e;
                 }
                 attempt++;
@@ -151,7 +158,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             {
                 try
                 {
-                    using (HttpClient client = new HttpClient())
+                    using (HttpClient client = new HttpClient(clientHandler))
                     {
                         client.BaseAddress = new Uri(_url);
 
@@ -165,8 +172,11 @@ namespace Cindi.DotNetCore.BotExtensions.Client
                         if (response.IsSuccessStatusCode)
                         {
                             var content = await response.Content.ReadAsStringAsync();
-
                             return JObject.Parse(content);
+                        }
+                        else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                        {
+                            throw new BadRequestException(await response.Content.ReadAsStringAsync());
                         }
                         else
                         {
@@ -176,11 +186,10 @@ namespace Cindi.DotNetCore.BotExtensions.Client
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed to send PUT request " + resourcePath + " with message " + e.Message + ", will sleep for 1 second and try again, attempt " + attempt);
-                    Thread.Sleep(1000);
+                    attempt++;
+                    BackOff(attempt, "PUT " + resourcePath, e, maxAttempts);
                     lastException = e;
                 }
-                attempt++;
             }
 
             throw lastException;
@@ -249,6 +258,26 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             }
 
             return stepRequestResult["result"].ToObject<Step>();
+        }
+
+        public async void BackOff(int attempt, string command, Exception e, int maxAttempts)
+        {
+            var backoffTime = CalculateBackoffTime(attempt);
+
+            if (attempt < maxAttempts)
+            {
+                Console.WriteLine("Failed to send " + command + " with message " + e.Message + ", will sleep for " + backoffTime + " second and try again, attempt " + attempt);
+                await Task.Delay(backoffTime);
+            }
+            else
+            {
+                Console.WriteLine("Failed to send " + command + " with message " + e.Message + ".");
+            }
+        }
+
+        public static int CalculateBackoffTime(int attempt)
+        {
+            return attempt * 5000;
         }
     }
 }

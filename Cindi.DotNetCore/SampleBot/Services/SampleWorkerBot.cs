@@ -66,7 +66,7 @@ namespace SampleBot.Services
                     if (((string)(DynamicDataUtility.GetData(step.Inputs, "secret").Value) == "This is a test"))
                         {
                         {
-                            updateRequest.Outputs = new Dictionary<string, object>() { { "secret", "I unencrypted the value " + ((string)(DynamicDataUtility.GetData(step.Inputs, "secret").Value))} };
+                            updateRequest.Outputs = new Dictionary<string, object>() { { "secret", (string)(DynamicDataUtility.GetData(step.Inputs, "secret").Value)} };
                             updateRequest.Status = StepStatuses.Successful;
                             return Task.FromResult(updateRequest);
                         }

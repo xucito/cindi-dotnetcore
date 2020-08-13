@@ -62,11 +62,14 @@ namespace Cindi.DotNetCore.BotExtensions
 
             waitTime = options.SleepTime;
 
-            // Register the step template
-            foreach (var template in options.StepTemplateLibrary)
+            if (options.NodeURL != null && options.NodeURL != "")
             {
-                // Queue all the templates for registration
-                QueueTemplateForRegistration(template);
+                // Register the step template
+                foreach (var template in options.StepTemplateLibrary)
+                {
+                    // Queue all the templates for registration
+                    QueueTemplateForRegistration(template);
+                }
             }
 
             if (logger != null)
@@ -218,12 +221,12 @@ namespace Cindi.DotNetCore.BotExtensions
 
             if (result != null)
             {
-                Logger.LogInformation("Successfully registered template " + stepTemplate.Id);
+                Logger.LogInformation("Successfully registered template " + stepTemplate.ReferenceId);
                 return true;
             }
             else
             {
-                throw new Exception("Error adding template for template " + stepTemplate.Id);
+                throw new Exception("Error adding template for template " + stepTemplate.ReferenceId);
             }
         }
 
@@ -251,10 +254,11 @@ namespace Cindi.DotNetCore.BotExtensions
         /// </summary>
         public async void BotLoop()
         {
+            Logger.LogDebug("Starting loops.");
             var stopWatch = new Stopwatch();
             while (started)
             {
-                Logger.LogInformation("Starting new Thread");
+                Logger.LogDebug("Starting new Thread");
                 Step nextStep = null;
                 try
                 {
@@ -273,11 +277,6 @@ namespace Cindi.DotNetCore.BotExtensions
                 {
                     Logger.LogInformation("Processing step " + nextStep.Id);
                     stepResult.Id = nextStep.Id;
-
-                    /*      var keyTest = Domain.Utilities.SecurityUtility.RsaEncryptWithPublic("This is a secret", publicKey);
-
-                          var decrypted = Domain.Utilities.SecurityUtility.RsaDecryptWithPrivate(keyTest, privateSecretEncryptionKey);
-                          */
                     nextStep.Inputs = DynamicDataUtility.DecryptDynamicData(RegisteredTemplates.Where(rt => rt.ReferenceId == nextStep.StepTemplateId).First().InputDefinitions, nextStep.Inputs, Domain.Enums.EncryptionProtocol
                         .RSA, _client.keyPair.PrivateKey, false);
 
@@ -296,32 +295,34 @@ namespace Cindi.DotNetCore.BotExtensions
 
                     int count = 0;
                     string success = "";
-                    while (success == "")
+                    try
                     {
-                        try
-                        {
-                            success = await _client.CompleteStep(stepResult, idToken);
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.LogWarning("Failed to save step in Cindi with exception " + e.Message + ". Sleeping for 1 seconds and than retrying...");
-                            Thread.Sleep(1000);
-                        }
+                        success = await _client.CompleteStep(stepResult, idToken);
+                        Logger.LogInformation("Completed step " + stepResult.Id + " with status " + stepResult.Status);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("Failed to save step "+ stepResult.Id + " with status " + stepResult.Status + " in Cindi with exception " + e.Message + ".");
+                        Thread.Sleep(1000);
                     }
                 }
                 else
                 {
-                    Logger.LogInformation("No step found");
+                    Logger.LogDebug("No step found");
                 }
 
                 loopNumber++;
                 stopWatch.Stop();
-                Logger.LogInformation("Completed Service Loop " + loopNumber + " took approximately " + stopWatch.ElapsedMilliseconds + "ms");
+                Logger.LogDebug("Completed Service Loop " + loopNumber + " took approximately " + stopWatch.ElapsedMilliseconds + "ms");
 
-                lock (waitTimeLocker)
+                //Only sleep if no step was picked up
+                if (nextStep == null)
                 {
-                    Logger.LogInformation("Sleeping for " + waitTime + "ms");
-                    Thread.Sleep(waitTime);
+                    lock (waitTimeLocker)
+                    {
+                        Logger.LogDebug("Sleeping for " + waitTime + "ms");
+                        Thread.Sleep(waitTime);
+                    }
                 }
             }
         }
@@ -336,11 +337,8 @@ namespace Cindi.DotNetCore.BotExtensions
             {
                 StepTemplateIds = RegisteredTemplates.Select(t => t.ReferenceId).ToArray()
             };
-
             var result = await _client.GetNextStep(newRequest, idToken);
-
             Step step = result;
-
             return step;
         }
 
