@@ -36,12 +36,12 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             }
         }
 
-        public BotClient(string url)
+        public BotClient(string botName, string url)
         {
             _url = url;
             _nonce = 0;
             keyPair = SecurityUtility.GenerateRSAKeyPair(2048);
-            var result = RegisterBot("", keyPair.PublicKey).GetAwaiter().GetResult();
+            var result = RegisterBot(botName, keyPair.PublicKey).GetAwaiter().GetResult();
             _botId = result.IdKey;
         }
 
@@ -50,7 +50,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             _url = options.Url;
             _nonce = 0;
             keyPair = SecurityUtility.GenerateRSAKeyPair(2048);
-            var result = RegisterBot("", keyPair.PublicKey).GetAwaiter().GetResult();
+            var result = RegisterBot(options.Name, keyPair.PublicKey).GetAwaiter().GetResult();
             _botId = result.IdKey;
         }
 
@@ -135,13 +135,15 @@ namespace Cindi.DotNetCore.BotExtensions.Client
                         }
                         else
                         {
-                            throw new RegistrationFailureException();
+                            throw new Exception("Post request failed with status code " + response.StatusCode + " and message "  + (await response.Content.ReadAsStringAsync()));
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    BackOff(attempt, "GET " + resourcePath, e, maxAttempts);
+                    BackOff(attempt, "POST" +
+                        "" +
+                        " " + resourcePath, e, maxAttempts);
                     lastException = e;
                 }
                 attempt++;
@@ -247,7 +249,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
             return (await SendPutRequest("/api/steps/" + request.Id, request, true)).Value<string>("objectRefId");
         }
 
-        public async Task<Step> GetNextStep(StepRequest request, string idToken)
+        public async Task<NextStep> GetNextStep(StepRequest request, string idToken)
         {
             var stepRequestResult = (await SendPostRequest("/api/steps/assignment-requests", request, true));
 
@@ -256,8 +258,10 @@ namespace Cindi.DotNetCore.BotExtensions.Client
                 return null;
 
             }
-
-            return stepRequestResult["result"].ToObject<Step>();
+            NextStep result = new NextStep();
+            result.Step = stepRequestResult["result"].ToObject<Step>();
+            result.EncryptionKey = stepRequestResult["encryptionKey"].ToObject<string>();
+            return result;
         }
 
         public async void BackOff(int attempt, string command, Exception e, int maxAttempts)

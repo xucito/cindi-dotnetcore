@@ -38,7 +38,7 @@ namespace SampleBot.Services
             _client.PostNewWorkflowTemplate(Library.WorkflowTemplate2, username, password).GetAwaiter().GetResult();
             _client.PostNewWorkflowTemplate(Library.ConcurrencyTest, username, password).GetAwaiter().GetResult();
 
-            List<SampleWorkerBot> bots = new List<SampleWorkerBot>();
+            /*List<SampleWorkerBot> bots = new List<SampleWorkerBot>();
             for (var i = 0; i < 5; i++)
 
             {
@@ -52,7 +52,7 @@ namespace SampleBot.Services
                 },
                     AutoStart = true
                 }, loggerFactory, UrlEncoder.Create()));
-            }
+            }*/
 
             /*_client.PostGlobalValue("STRINGGV", InputDataTypes.String, "This is a test string global value ", "string").GetAwaiter().GetResult();
             _client.PostGlobalValue("INTGV", InputDataTypes.Int, "This is a test int global value ", 0).GetAwaiter().GetResult();
@@ -79,28 +79,31 @@ namespace SampleBot.Services
                      }, username, password);
                      Thread.Sleep(rand.Next(0, 10000));
                  }
-             }));
-             _testThreads.Add(new Thread(async () =>
-             {
-                 while (true)
-                 {
-                     var result = await _client.PostNewStep(new Cindi.DotNetCore.BotExtensions.ViewModels.StepInput()
-                     {
-                         StepTemplateId = Library.SecretStepTemplate.ReferenceId,
-                         Inputs = new Dictionary<string, object>()
-                     {
+             }));*/
+
+
+            _testThreads.Add(new Thread(async () =>
+            {
+                while (true)
+                {
+                    var result = await _client.PostNewStep(new Cindi.DotNetCore.BotExtensions.ViewModels.StepInput()
+                    {
+                        StepTemplateId = Library.SecretStepTemplate.ReferenceId,
+                        Inputs = new Dictionary<string, object>()
+                    {
                           {"secret", "This is a test" }
-                     }
-                     }, username, password);
-                     CheckConcurrency("admin", "PleaseChangeMe");
-                     Thread.Sleep(rand.Next(0, 10000));
-                 }
-             }));
+                    }
+                    }, username, password);
+                   // CheckConcurrency("admin", "PleaseChangeMe");
+                   // Thread.Sleep(rand.Next(0, 10000));
+                }
+            }));
+             
 
              foreach (var thread in _testThreads)
              {
                  thread.Start();
-             }*/
+             }
 
             //   CheckConcurrency("admin", "PleaseChangeMe");
             CheckWorkflows("admin", "PleaseChangeMe");
@@ -144,8 +147,9 @@ namespace SampleBot.Services
                     SleepTime = 100,
                     StepTemplateLibrary = new List<Cindi.Domain.Entities.StepTemplates.StepTemplate>() {
                     Library.SecretStepTemplate,
-                    Library.StepTemplate
+                    Library.StepTemplate,
                 },
+                    BotName = "TEST",
                     AutoStart = false
                 }, loggerFactory, UrlEncoder.Default));
             }
@@ -158,7 +162,10 @@ namespace SampleBot.Services
                 if (getTask != null)
                 {
                     Interlocked.Increment(ref numberOfStepsFound);
-                    stepAssigned.Add(getTask.Id);
+                    if (getTask.Step != null)
+                    {
+                        stepAssigned.Add(getTask.Step.Id);
+                    }
                 }
             });
 

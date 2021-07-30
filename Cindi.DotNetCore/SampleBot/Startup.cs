@@ -30,6 +30,7 @@ namespace SampleBot
             services.AddWorkerBot<SampleWorkerBot>(o =>
             {
                 o.NodeURL = Configuration.GetValue<string>("cindiurl");
+                o.BotName = Configuration.GetValue<string>("botName");
                 o.SleepTime = 100;
                 o.StepTemplateLibrary = new List<Cindi.Domain.Entities.StepTemplates.StepTemplate>() {
                     Library.SecretStepTemplate,
@@ -43,13 +44,12 @@ namespace SampleBot
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
             });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, SampleWorkerBot bot
-           , SampleService sampleService
+         /* , SampleService sampleService*/
             )
         {
             if (env.IsDevelopment())
@@ -67,7 +67,6 @@ namespace SampleBot
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
             });
 
-            app.UseMvc();
         }
     }
 }

@@ -2,31 +2,35 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <ApplicationIcon />
     <StartupObject />
     <Description>.NET Core extension for Cindi.
-Compatible with Cindi Release 1.x</Description>
+Compatible with Cindi Release 2.x</Description>
     <Authors>xucito</Authors>
     <Company>Cindi</Company>
     <PackageLicenseUrl>https://github.com/xucito/cindi-dotnetcore/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/xucito/cindi-dotnetcore</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReleaseNotes>Release Build of .NET Core Extensions</PackageReleaseNotes>
-    <Version>1.2.0</Version>
+    <Version>2.0.0-alpha</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <FileVersion>1.2.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cindi.Domain" Version="1.0.6" />
+    <PackageReference Include="Cindi.Domain" Version="2.0.2-alpha" />
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.1.3" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.1.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.1" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Utility\" />
   </ItemGroup>
 
 </Project>

@@ -11,5 +11,6 @@ namespace Cindi.DotNetCore.BotExtensions.Requests
         public string Status { get; set; }
         public int StatusCode { get; set; }
         public string Log { get; set; }
+        public string EncryptionKey { get; set; }
     }
 }

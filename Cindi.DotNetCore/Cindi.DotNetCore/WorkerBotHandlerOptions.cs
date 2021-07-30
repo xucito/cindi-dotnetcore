@@ -7,6 +7,7 @@ namespace Cindi.DotNetCore.BotExtensions
 {
     public class WorkerBotHandlerOptions
     {
+        public string BotName { get; set; }
         public string NodeURL { get; set; }
         /// <summary>
         /// In MS how long the bot should sleep each loop

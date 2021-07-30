@@ -54,22 +54,7 @@ namespace Cindi.DotNetCore.BotExtensions
             {
                 Id = newStepId,
                 StepTemplateId = request.StepTemplateId,
-                CreatedOn = DateTime.UtcNow,
-                Journal = new Domain.Entities.JournalEntries.Journal(
-                    new JournalEntry()
-                    {
-                        CreatedOn = DateTime.UtcNow,
-                        Updates = new List<Update>()
-                        {
-                            new Update()
-                            {
-                                FieldName = "status",
-                                Value = StepStatuses.Unassigned,
-                                Type = UpdateType.Override
-                            }
-                        }
-                    } ),
-                Inputs = request.Inputs
+                CreatedOn = DateTime.UtcNow
             }));
         }
     }

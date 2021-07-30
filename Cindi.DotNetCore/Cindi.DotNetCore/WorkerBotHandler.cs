@@ -19,8 +19,8 @@ using Cindi.Domain.Entities.StepTemplates;
 using Newtonsoft.Json.Linq;
 using Cindi.DotNetCore.BotExtensions.Client;
 using System.Security;
-using Cindi.DotNetCore.BotExtensions.Utility;
 using Cindi.Domain.Utilities;
+using Cindi.DotNetCore.BotExtensions.ViewModels;
 
 namespace Cindi.DotNetCore.BotExtensions
 {
@@ -51,14 +51,15 @@ namespace Cindi.DotNetCore.BotExtensions
                 this.nodeUrl = options.NodeURL;
                 _client = new BotClient(new BotClientOptions()
                 {
-                    Url = this.nodeUrl
+                    Url = this.nodeUrl,
+                    Name = options.BotName
                 });
                 _hasValidHttpClient = true;
             }
 
             Options = options;
 
-            // RegisterBot().GetAwaiter().GetResult();
+            //RegisterBot().GetAwaiter().GetResult();
 
             waitTime = options.SleepTime;
 
@@ -96,7 +97,8 @@ namespace Cindi.DotNetCore.BotExtensions
                 this.nodeUrl = options.CurrentValue.NodeURL;
                 _client = new BotClient(new BotClientOptions()
                 {
-                    Url = this.nodeUrl
+                    Url = this.nodeUrl,
+                    Name = options.CurrentValue.BotName
                 });
                 _hasValidHttpClient = true;
             }
@@ -132,7 +134,7 @@ namespace Cindi.DotNetCore.BotExtensions
             StartWorking();
         }
 
-        /* public async Task<bool> RegisterBot()
+        /*public async Task<bool> RegisterBot()
          {
              var keys = Cindi.Domain.Utilities.SecurityUtility.GenerateRSAKeyPair(Options.KeyLength);
              privateSecretEncryptionKey = keys.PrivateKey;
@@ -260,9 +262,12 @@ namespace Cindi.DotNetCore.BotExtensions
             {
                 Logger.LogDebug("Starting new Thread");
                 Step nextStep = null;
+                string encryptionKey = "";
                 try
                 {
-                    nextStep = await GetNextStep();
+                    var response = await GetNextStep();
+                    nextStep = response.Step;
+                    encryptionKey = response.EncryptionKey;
                 }
                 catch (Exception e)
                 {
@@ -273,18 +278,22 @@ namespace Cindi.DotNetCore.BotExtensions
 
                 UpdateStepRequest stepResult = new UpdateStepRequest();
 
+                string newEncryptionKey = SecurityUtility.RandomString(32, false);
+
                 if (nextStep != null)
                 {
                     Logger.LogInformation("Processing step " + nextStep.Id);
                     stepResult.Id = nextStep.Id;
+                    string decryptedEncryptionKey = encryptionKey != null && encryptionKey != "" ? SecurityUtility.RsaDecryptWithPrivate(encryptionKey, _client.keyPair.PrivateKey): "";
                     nextStep.Inputs = DynamicDataUtility.DecryptDynamicData(RegisteredTemplates.Where(rt => rt.ReferenceId == nextStep.StepTemplateId).First().InputDefinitions, nextStep.Inputs, Domain.Enums.EncryptionProtocol
-                        .RSA, _client.keyPair.PrivateKey, false);
+                        .AES256, decryptedEncryptionKey, false);
 
                     var template = RegisteredTemplates.Where(rt => rt.ReferenceId == nextStep.StepTemplateId).First();
                     try
                     {
                         stepResult = await ProcessStep(nextStep);
-                        stepResult.Outputs = DynamicDataUtility.EncryptDynamicData(template.OutputDefinitions, stepResult.Outputs, Domain.Enums.EncryptionProtocol.RSA, _client.keyPair.PrivateKey, false);
+                        stepResult.Outputs = DynamicDataUtility.EncryptDynamicData(template.OutputDefinitions, stepResult.Outputs, Domain.Enums.EncryptionProtocol.AES256, newEncryptionKey);
+                        stepResult.EncryptionKey = SecurityUtility.RsaEncryptWithPrivate(newEncryptionKey, _client.keyPair.PrivateKey);
                     }
                     catch (Exception e)
                     {
@@ -331,15 +340,13 @@ namespace Cindi.DotNetCore.BotExtensions
         /// Get the next step based on defintions acceptable
         /// </summary>
         /// <returns></returns>
-        public async Task<Step> GetNextStep()
+        public async Task<NextStep> GetNextStep()
         {
             var newRequest = new StepRequest
             {
                 StepTemplateIds = RegisteredTemplates.Select(t => t.ReferenceId).ToArray()
             };
-            var result = await _client.GetNextStep(newRequest, idToken);
-            Step step = result;
-            return step;
+            return await _client.GetNextStep(newRequest, idToken);
         }
 
         public async Task<UpdateStepRequest> ProcessStep(Step step)

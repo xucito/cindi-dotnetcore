@@ -13,7 +13,7 @@ namespace Cindi.DotNetCore.BotExtensions.Client
         Task<string> AddStepLog(Guid stepId, string log, string idToken);
         void BackOff(int attempt, string command, Exception e, int maxAttempts);
         Task<string> CompleteStep(UpdateStepRequest request, string idToken);
-        Task<Step> GetNextStep(StepRequest request, string idToken);
+        Task<NextStep> GetNextStep(StepRequest request, string idToken);
         Task<string> PostNewStep(StepInput stepInput, string idToken);
         Task<string> PostNewWorkflow(WorkflowInput input, string idToken);
         Task<string> PostNewWorkflowTemplate(WorkflowTemplate WorkflowTemplate, string idToken);
